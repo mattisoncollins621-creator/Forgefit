@@ -23,7 +23,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.click('[data-a=regen]'); await page.waitForTimeout(200);
     const rir = await page.evaluate(() => state.workout.items.filter(i => !i.cardio).map(i => i.sets[0].rir));
     H.check('regenerated workout uses block week-1 target (3 RIR)', rir.length > 0 && rir.every(r => r === 3), rir);
-    H.check('workout note mentions the block', (await page.locator('.px4 .mut').first().textContent()).includes('Block week 1 of 8'));
+    H.check('workout note mentions the block', (await page.locator('.hnote').first().textContent()).includes('Block week 1 of 8'));
     await page.evaluate(() => { state.block.start = sod(Date.now()) - 7 * 7 * 864e5; checkBlock(); renderWorkout(); });
     H.check('final block week triggers an automatic deload', await page.evaluate(() => isDeload() && state.lastDeload > Date.now() - 5000));
     H.check('deload banner explains it is the block', await page.locator('.banner:has-text("final week of your training block")').count() === 1);
@@ -82,7 +82,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.click('#nav-progress');
     H.check('bodyweight-vs-strength chart draws two lines', await page.locator('.card:has(h2:text("Bodyweight vs strength")) path.ln').count() === 2);
     H.check('chart legend shows both series', (await page.locator('.legend').textContent()).includes('Strength') && (await page.locator('.legend').textContent()).includes('Bodyweight'));
-    H.check('weekly sets show status + 4-week trend for every muscle', await page.locator('.wsub').count() === 10);
+    H.check('weekly sets show status + 4-week trend for every muscle', await page.locator('.vrow').count() === 10 && await page.locator('.vrow .spark').count() === 10);
     H.check('streak tile in Progress', await page.locator('.tiles.t4 .tile').count() === 4);
     await page.evaluate(() => { state.measures = []; renderProgress(); });
     H.check('without weight entries the chart explains what to log', await page.locator('.empty:has-text("Log your weight")').count() === 1);
@@ -163,13 +163,13 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.evaluate(() => navigator.serviceWorker.ready); await page.reload(); await page.waitForSelector('#nav');
     await page.waitForFunction(() => navigator.serviceWorker.controller);
     const cached = await page.evaluate(async () => { const ks = await caches.keys(); const c = await caches.open(ks[0]); const reqs = (await c.keys()).map(r => new URL(r.url).pathname); return { ks, reqs }; });
-    H.check('service worker cache v11 holds the app shell + icons', cached.ks.includes('forgefit-v11') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
+    H.check('service worker cache v12 holds the app shell + icons', cached.ks.includes('forgefit-v12') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
     await ctx.setOffline(true); await page.reload(); await page.waitForSelector('#nav');
     H.check('app opens fully offline', await page.locator('#exlist .ex').count() >= 1);
     await page.click('#nav-progress'); await page.click('#nav-more'); H.check('tabs work offline', page.errs.filter(e => !/Failed to load resource|net::ERR/.test(e)).length === 0, page.errs);
     await ctx.setOffline(false);
     // simulate a new release: the next service worker takes over and the app offers a reload
-    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v11", "forgefit-v12"));
+    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v12", "forgefit-v13"));
     await page.evaluate(() => { wk().startedAt = Date.now(); });   // mid-workout: the app must NOT reload itself
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
     await page.waitForSelector('#toast.show.act', { timeout: 8000 });

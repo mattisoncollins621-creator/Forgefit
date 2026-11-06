@@ -402,6 +402,8 @@ function updatePassiveRecovery() {
   MUSCLES.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * 1.25, 0, 100); }); // floats: no rounding drift
   state.lastTick = now; scheduleSave();
 }
+const recCol = p => p > 85 ? 'gr' : p >= 50 ? 'am' : 'rd';                 // Fresh / Recovering / Fatigued
+const recWord = p => p > 85 ? 'Fresh' : p >= 50 ? 'Recovering' : 'Fatigued';
 const rec = m => Math.round(state.muscles[m] ? state.muscles[m].recovery : 100);
 const avgRecovery = () => Math.round(MUSCLES.reduce((a, m) => a + state.muscles[m].recovery, 0) / MUSCLES.length);
 

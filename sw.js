@@ -1,5 +1,5 @@
 /* ForgeFit service worker: offline-capable app shell that prefers the newest version when online */
-const V = 'forgefit-v11';
+const V = 'forgefit-v12';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 // each file is cached on its own, so one missing optional file can never block the install
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => { })))).then(() => self.skipWaiting())); });

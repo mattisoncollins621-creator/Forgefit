@@ -167,7 +167,7 @@ function cardHtml(i) {
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
       <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? ic('check') + ' Completed' : 'Mark complete'}</button></article>`;
   }
-  const pct = rec(ex.primary), bc = pct >= 80 ? 'gr' : pct >= 55 ? 'am' : 'rd', last = lastPerf(ex.id);
+  const pct = rec(ex.primary), bc = recCol(pct), last = lastPerf(ex.id);
   let wn = 0;
   const rows = it.sets.map((s, j) => {
     const lbl = s.type === 'warmup' ? 'W' : s.type === 'drop' ? 'D' : ++wn;
@@ -214,21 +214,29 @@ function renderWorkout() {
     tabEl.innerHTML = `${sessHeader()}${list}
     <button class="btn danger full big" data-a="endWorkout">${ic('stop')} End workout</button>`;
   } else {
+    const st = planStats(), n = w.items.length, trimM = /trimmed (\d+)%/.exec(w.note || ''), trimmed = w.items.some(it => it.trimmed);
     tabEl.innerHTML = `
     ${topBanners()}
     ${weekCard()}
-    <div class="card plancard"><div class="row sp"><span class="lbl">Training split</span><span class="tag">${state.split === 'auto' ? 'Smart: ' + esc(SPLIT_NAME[sp] || '') : esc(SPLIT_NAME[state.split])}</span></div>
-      <div class="chips scrollx">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="split" data-v="${k}">${l}</button>`).join('')}</div>
-      <div class="grid2 pt8"><button class="btn sec" data-a="autoSuper">${ic('link')} Pair supersets</button><button class="btn sec" data-a="regen">${ic('zap')} Regenerate</button></div>
-      <div class="qgrid mt8"><button data-a="nl">${ic('message')}<span>Quick log</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="repeatLast">${ic('repeat')}<span>Repeat last</span></button><button data-a="planOpen">${ic('calendar')}<span>Plan</span></button></div></div>
-    <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right">${planSummary()}</div></div>
-    ${w.items.length ? `<button class="btn pri hero full" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}
+    <div class="chips scrollx snapx splits" role="tablist" aria-label="Training split">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="split" data-v="${k}">${l}</button>`).join('')}</div>
+    <div class="card hero-card">
+      <div class="row sp top"><div class="grow"><h2 class="ttl">${esc(w.name)}</h2>
+        <div class="mchips"><span>${n} exercise${n === 1 ? '' : 's'}</span><span>~${st.min} min</span>${trimmed ? `<span class="am">${trimM ? trimM[1] + '% ' : ''}auto-trim active</span>` : ''}</div></div>
+        <button class="ib" data-a="regen" aria-label="Regenerate workout" title="Regenerate">${ic('refresh')}</button></div>
+      ${w.note ? `<p class="mut xs hnote">${esc(w.note)}</p>` : ''}
+      <div class="toolbar"><button data-a="autoSuper">${ic('link')}<span>Supersets</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="nl">${ic('timer')}<span>Quick log</span></button><button data-a="wkMore" aria-label="More options">${ic('more')}<span>More</span></button></div>
+    </div>
     ${list}
-    ${w.items.length ? `<button class="btn pri hero full" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}`;
+    ${n ? `<button class="btn pri hero fab" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}`;
   }
+  document.body.classList.toggle('hasfab', tab === 'workout' && !live && !!w.items.length);
   paintClock(); tickSess();
 }
 R.workout = renderWorkout;
+A.wkMore = () => {
+  const b = (x, icn, l, d) => `<button class="btn sec full lrow" data-a="editDo" data-x="${x}">${ic(icn)}<span><b>${l}</b><em>${d}</em></span></button>`;
+  openSheet('More options', `<div class="col">${b('repeatLast', 'repeat', 'Repeat last workout', 'Start from your previous session')}${b('planOpen', 'calendar', 'Plan &amp; training blocks', 'Weekly schedule and ramp-up blocks')}${b('regen', 'refresh', 'Regenerate workout', 'Build a fresh plan from your recovery')}</div>`);
+};
 function refreshCard(i) {
   const el = $(`#exlist [data-ex="${i}"]`); if (!el) return renderWorkout();
   const t = document.createElement('div'); t.innerHTML = cardHtml(i);
@@ -561,28 +569,10 @@ const setVol = (ex, s) => loadOf(ex, s) * (+s.reps || 0);
 /* A.finish lives in session.js */
 function stopRestTimerQuiet() { state.timer = null; clearInterval(tInt); clearTimeout(tBg); $('#tbar').hidden = true; }
 A.sessTpl = () => { const s = window.__lastSession; ask('Save routine', 'Routine name', s.rec.name.replace(' Session', ''), n => saveTemplate(n, s.tpl)); };
-/* ---------- recovery tab ---------- */
-function renderRecovery() {
-  updatePassiveRecovery();
-  const adv = deloadAdvice(), avg = avgRecovery();
-  const col = p => p >= 80 ? 'gr' : p >= 55 ? 'am' : 'rd';
-  $('#tab-recovery').innerHTML = `
-    <div class="card"><div class="row sp"><div><h2 class="h2">Readiness</h2><p class="mut sm">Recovers ~1.25% per hour. Drag a slider if you feel sore.</p></div><b class="big ${col(avg)}">${avg}%</b></div>
-      <div class="row gap6 pt8"><button class="mini" data-a="resetRec">Reset all to 100%</button><button class="mini" data-a="simTime">+24h simulate</button></div></div>
-    ${restCard()}
-    ${coachBanner() || `<div class="banner ok"><div class="grow"><b>Recovery looks good</b><div class="mut sm">No deload needed right now. Auto-regulation trims weights when muscles are under ~75% fresh.</div></div><button class="mini" data-a="startDeload">Deload anyway</button></div>`}
-    <div class="card col">${MUSCLES.map(m => { const p = rec(m); return `<div class="rcell"><div class="row sp"><b>${m}</b><b class="${col(p)}">${p}% fresh</b></div><div class="bar"><i class="bg-${col(p)}" style="width:${p}%"></i></div>
-      <div class="row sp mut xs"><span>Manual override</span><input type="range" min="0" max="100" value="${p}" data-f="recSlide" data-m="${m}" aria-label="${m} freshness"></div></div>`; }).join('')}</div>`;
-}
-R.recovery = renderRecovery;
-F.recSlide = el => { state.muscles[el.dataset.m].recovery = +el.value; scheduleSave(); };
-A.resetRec = () => { MUSCLES.forEach(m => state.muscles[m].recovery = 100); scheduleSave(); renderRecovery(); };
-A.simTime = () => { MUSCLES.forEach(m => state.muscles[m].recovery = Math.min(100, state.muscles[m].recovery + 24 * 1.25)); scheduleSave(); renderRecovery(); };
-
 /* ---------- navigation ---------- */
 function go(t) {
   tab = t;
   ['workout', 'recovery', 'progress', 'body', 'more'].forEach(k => { $('#tab-' + k).hidden = k !== t; $('#nav-' + k).classList.toggle('on', k === t); });
-  R[t] && R[t](); window.scrollTo(0, 0);
+  R[t] && R[t](); if (t !== 'workout') document.body.classList.remove('hasfab'); window.scrollTo(0, 0);
 }
 A.go = el => go(el.dataset.t);

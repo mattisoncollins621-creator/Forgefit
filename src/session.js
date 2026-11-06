@@ -13,6 +13,10 @@ function setsSummary(it) {
   const base = same ? `${ws.length} × ${ws[0].reps}${+ws[0].weight ? ' @ ' + ws[0].weight + ' ' + unit() : ''}` : ws.slice(0, 4).map(s => `${+s.weight || 'BW'}×${s.reps}`).join(' · ') + (ws.length > 4 ? ' …' : '');
   return base + (wm ? ` · +${wm} warm-up` : '');
 }
+function planStats() {
+  let sets = 0, cm = 0; wk().items.forEach(it => { if (it.cardio) cm += +it.min || 0; else sets += it.sets.length; });
+  return { min: Math.max(5, Math.round((sets * 2.5 + cm) / 5) * 5) };
+}
 function planSummary() {
   const its = wk().items; if (!its.length) return '<b class="or">—</b><div class="mut xs">Planned</div>';
   let sets = 0, cm = 0; its.forEach(it => { if (it.cardio) cm += +it.min || 0; else sets += it.sets.length; });
@@ -22,7 +26,7 @@ function planSummary() {
 function planRowHtml(i) {
   const it = wk().items[i], ex = exById(it.exId); if (!ex) return '';
   const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
-  const pct = it.cardio ? 0 : rec(ex.primary), bc = pct >= 80 ? 'gr' : pct >= 55 ? 'am' : 'rd';
+  const pct = it.cardio ? 0 : rec(ex.primary), bc = recCol(pct);
   const tag = it.cardio ? '<span class="tag">Cardio</span>' : `<span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span>`;
   return `<article class="card ex plan" data-ex="${i}"><div class="row gap6 top">
     <button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>

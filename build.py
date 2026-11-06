@@ -21,7 +21,7 @@ css=open('src/style.css').read(); body=open('src/body.html').read()
 import re as _re
 body=_re.sub(r'\{\{ic:([a-z-]+)\}\}',lambda m:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[m.group(1)]+'</svg>',body)
 js=''
-for i,f in enumerate(['core.js','ui.js','extras.js','more.js','session.js','features.js']):
+for i,f in enumerate(['core.js','ui.js','extras.js','more.js','session.js','recovery.js','features.js']):
     s=open('src/'+f).read()
     if i: s=s.replace("'use strict';\n",'',1)
     js+=s+'\n'

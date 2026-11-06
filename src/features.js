@@ -375,18 +375,32 @@ A.gearSave = () => ask('Save equipment profile', 'Profile name (e.g. Hotel gym)'
 A.gearDelProfile = el => { delete state.gearProfiles[el.dataset.v]; scheduleSave(); renderMore(); };
 
 /* ---------- charts ---------- */
+let chartN = 0;
+function smoothPath(P) {
+  let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2, k = .18, lo = Math.min(p1[1], p2[1]), hi = Math.max(p1[1], p2[1]);
+    const c1y = clamp(p1[1] + (p2[1] - p0[1]) * k, lo, hi), c2y = clamp(p2[1] - (p3[1] - p1[1]) * k, lo, hi);
+    d += ` C${(p1[0] + (p2[0] - p0[0]) * k).toFixed(1)} ${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) * k).toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
 function lineChart(pts, o = {}) {
   if (!pts.length) return '<div class="empty">No data yet.</div>';
-  const w = 340, h = o.h || 170, pl = 40, pr = 12, pt = 12, pb = 22, fmt = o.fmt || (v => Math.round(v * 10) / 10);
+  const w = 340, h = o.h || 176, pl = 40, pr = 14, pt = 14, pb = 26, fmt = o.fmt || (v => Math.round(v * 10) / 10), gid = 'cg' + (++chartN);
   let x0 = Math.min(...pts.map(p => p.t)), x1 = Math.max(...pts.map(p => p.t)); if (x0 === x1) { x0 -= DAY; x1 += DAY; }
   const ys = pts.map(p => p.v); let y0 = Math.min(...ys), y1 = Math.max(...ys); const py = (y1 - y0) * .2 || Math.max(1, y1 * .05); y0 -= py; y1 += py;
   const X = t => pl + (t - x0) / (x1 - x0) * (w - pl - pr), Y = v => pt + (1 - (v - y0) / (y1 - y0)) * (h - pt - pb);
-  const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
-  const area = d + ` L${X(pts[pts.length - 1].t).toFixed(1)} ${h - pb} L${X(pts[0].t).toFixed(1)} ${h - pb} Z`;
+  const P = pts.map(p => [X(p.t), Y(p.v)]), d = P.length > 1 ? smoothPath(P) : `M${P[0][0]} ${P[0][1]}`;
+  const area = P.length > 1 ? d + ` L${P[P.length - 1][0].toFixed(1)} ${h - pb} L${P[0][0].toFixed(1)} ${h - pb} Z` : '';
   const ticks = [y0 + py, (y0 + y1) / 2, y1 - py].map(v => `<text x="${pl - 6}" y="${Y(v) + 3}" text-anchor="end">${fmt(v)}</text><line x1="${pl}" x2="${w - pr}" y1="${Y(v)}" y2="${Y(v)}"/>`).join('');
-  return `<svg viewBox="0 0 ${w} ${h}" class="chart" role="img" aria-label="Trend chart"><g class="grid">${ticks}</g><path d="${area}" class="area"/><path d="${d}" class="ln"/>
-    ${pts.map(p => `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3"/>`).join('')}
-    <text class="xl" x="${pl}" y="${h - 5}">${fmtDate(Math.min(...pts.map(p => p.t)))}</text><text class="xl" x="${w - pr}" y="${h - 5}" text-anchor="end">${fmtDate(Math.max(...pts.map(p => p.t)))}</text></svg>`;
+  const nT = pts.length > 1 ? 4 : 1, dates = Array.from({ length: nT }, (_, i) => nT === 1 ? x0 + (x1 - x0) / 2 : x0 + (x1 - x0) * i / (nT - 1))
+    .map((t, i) => `<text class="xl" x="${X(t).toFixed(1)}" y="${h - 7}" text-anchor="${nT === 1 ? 'middle' : i === 0 ? 'start' : i === nT - 1 ? 'end' : 'middle'}">${fmtDate(t)}</text>`).join('');
+  const dots = P.map((p, i) => i === P.length - 1 ? '' : (P.length <= 24 ? `<circle class="pt" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>` : '')).join('');
+  const lp = P[P.length - 1];
+  return `<svg viewBox="0 0 ${w} ${h}" class="chart" role="img" aria-label="Trend chart"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F97316" stop-opacity=".34"/><stop offset="1" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>
+    <g class="grid">${ticks}</g>${area ? `<path d="${area}" class="area" style="fill:url(#${gid})"/>` : ''}<path d="${d}" class="ln"/>${dots}
+    <circle class="halo" cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="8"/><circle class="pt last" cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="4"/>${dates}</svg>`;
 }
 
 /* ---------- progress tab ---------- */
@@ -409,38 +423,43 @@ function renderProgress() {
   if (!prog.ex || !ids.includes(prog.ex)) prog.ex = ids[0] || null;
   const pts = prog.ex ? state.e1rmHist[prog.ex].filter(p => !prog.range || p.t > now - prog.range * DAY) : [];
   const first = pts[0], lastP = pts[pts.length - 1], delta = pts.length > 1 ? Math.round((lastP.v - first.v) / first.v * 1000) / 10 : null;
-  const days = 14, hd = heatData(days), tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+  const days = 14, hd = heatData(days), tile = (v, l, sub) => `<div class="tile"><b>${v}</b><span>${l}</span><small>${sub || '&nbsp;'}</small></div>`, kfmt = v => v >= 10000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : v.toLocaleString();
   const cell = c => {
     let a = 0; if (prog.heat === 'vol') a = clamp(c.sets / 6, 0, 1); else if (c.pcts.length) a = clamp((c.pcts.reduce((x, y) => x + y, 0) / c.pcts.length - .5) / .5, .15, 1);
     return `<i style="${a ? `background:rgba(249,115,22,${(.15 + a * .85).toFixed(2)})` : ''}" title="${prog.heat === 'vol' ? c.sets + ' sets' : c.pcts.length ? Math.round(c.pcts.reduce((x, y) => x + y, 0) / c.pcts.length * 100) + '% of e1RM' : ''}"></i>`;
   };
   const ws4 = weeklySets(4), sk = streakInfo();
   $('#tab-progress').innerHTML = `
-    <div class="tiles t4">${tile(m30.length, 'Sessions · 30d')}${tile(m30.reduce((a, h) => a + (h.vol || 0), 0).toLocaleString(), unit() + ' volume · 30d')}${tile(m30.reduce((a, h) => a + (h.prs || 0), 0), 'PRs · 30d')}${tile(sk.streak ? ic('flame') + ' ' + sk.streak : sk.curN + '/' + sk.goal, sk.streak ? 'Week streak' : 'This week')}</div>
+    <div class="tiles t4">${tile(m30.length, 'Sessions', '30 days')}${tile(kfmt(m30.reduce((a, h) => a + (h.vol || 0), 0)), 'Volume', unit() + ' · 30 days')}${tile(m30.reduce((a, h) => a + (h.prs || 0), 0), 'PRs', '30 days')}${tile(sk.streak, 'Streak', sk.streak === 1 ? 'week' : 'weeks')}</div>
     ${progTools()}
     <div class="card"><div class="row sp"><h2 class="h2">Strength curve</h2><select data-f="progRange" class="sel-sm"><option value="30" ${prog.range === 30 ? 'selected' : ''}>1 month</option><option value="90" ${prog.range === 90 ? 'selected' : ''}>3 months</option><option value="365" ${prog.range === 365 ? 'selected' : ''}>1 year</option><option value="0" ${prog.range === 0 ? 'selected' : ''}>All time</option></select></div>
       ${ids.length ? `<select data-f="progEx">${ids.map(id => `<option value="${id}" ${id === prog.ex ? 'selected' : ''}>${esc(exById(id).name)}</option>`).join('')}</select>
       <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts)}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
       : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
     ${bodyVsStrength()}
-    <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="chips"><button class="chip ${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="chip ${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
+    <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="segp"><button class="${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
       <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day (secondary muscles count half).' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
       <div class="heat">${MUSCLES.map(m => `<div class="hrow"><span>${m}</span><div class="hcells">${hd[m].map(cell).join('')}</div></div>`).join('')}</div>
       <div class="row sp mut xs"><span>${fmtDate(now - (days - 1) * DAY)}</span><span>Today</span></div></div>
-    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The shaded band is your target range for your goal and experience. Each row shows the last 7 days, then the 4-week trend (oldest to newest).</p>
-      ${MUSCLES.map(m => {
-        const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), prev = (a[0] + a[1] + a[2]) / 3, arrow = cur > prev + 1 ? ic('arrow-up') : cur < prev - 1 ? ic('arrow-down') : ic('right');
-        const stat = cur >= lo && cur <= hi ? ['on target', 'gr'] : cur > hi ? ['above range', 'am'] : cur < lo * .5 ? ['low', 'rd'] : ['below target', 'am'];
-        return `<div class="wrow"><span>${m}</span><div class="wbar"><b class="zone" style="left:${(lo / sc * 100).toFixed(1)}%;width:${((hi - lo) / sc * 100).toFixed(1)}%"></b><i style="width:${clamp(cur / sc * 100, 0, 100).toFixed(1)}%"></i></div><em>${fmtN(cur)}</em></div>
-        <div class="wsub"><span class="${stat[1]}">${stat[0]} · aim ${lo}–${hi}</span><span>${arrow} ${a.map(fmtN).join(' · ')}</span></div>`;
-      }).join('')}</div>
-    <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? hist.slice(0, 12).map(h => `<div class="prow static"><div class="grow"><b>${esc(h.name || 'Session')}</b><div class="mut xs">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')}${h.dur ? ' · ' + h.dur + ' min' : ''}${(h.cardio || []).length ? ' · cardio' : ''}</div></div><div class="right gr"><b>${h.sets} sets</b><div class="xs">${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</div></div><button class="mini" data-a="histDel" data-id="${h.id}" aria-label="Delete session">${ic('close')}</button></div>`).join('') : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
+    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The green band is your target range for your goal and experience. Bars show the last 7 days; the mini chart is the last 4 weeks, oldest to newest.</p>
+      <div class="vlist">${MUSCLES.map(m => {
+        const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), mx = Math.max(1, ...a, lo);
+        const stat = cur >= lo && cur <= hi ? ['Optimal', 'gr'] : cur > hi ? ['Over', 'am'] : cur < lo * .5 ? ['Low', 'rd'] : ['Low', 'am'];
+        return `<div class="vrow" title="${m}: aim ${lo}–${hi} sets"><div class="vname"><b>${m}</b><span>${fmtN(cur)} sets</span></div>
+        <div class="vbar"><i style="width:${clamp(cur / sc * 100, 0, 100).toFixed(1)}%"></i><b class="zone" style="left:${(lo / sc * 100).toFixed(1)}%;width:${((hi - lo) / sc * 100).toFixed(1)}%"></b></div>
+        <div class="vstat"><span class="tag ${stat[1]}">${stat[0]}</span><div class="spark" aria-label="Last 4 weeks: ${a.map(fmtN).join(', ')}">${a.map((v, i) => `<i class="${i === 3 ? 'now' : ''}" style="height:${Math.max(3, Math.round(v / mx * 16))}px"></i>`).join('')}</div></div></div>`;
+      }).join('')}</div></div>
+    <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? `<div class="slist">${hist.slice(0, 12).map(h => {
+      const d = h.t ? new Date(h.t) : null, meta = [h.dur ? h.dur + ' min' : '', d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : esc(h.legacyDate || ''), (h.cardio || []).length ? 'cardio' : ''].filter(Boolean).join(' · ');
+      return `<div class="stile"><div class="dtile"><small>${d ? d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '—'}</small><b>${d ? String(d.getDate()).padStart(2, '0') : '–'}</b></div><div class="grow"><b class="sname">${esc(h.name || 'Session')}</b><div class="mut xs">${meta}</div></div><div class="spills"><span>${h.sets} sets</span><span>${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</span></div><button class="ib" data-a="histMenu" data-id="${h.id}" aria-label="Session options">${ic('more')}</button></div>`;
+    }).join('')}</div>` : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
 }
 R.progress = renderProgress;
 F.progEx = el => { prog.ex = el.value; renderProgress(); };
 F.progRange = el => { prog.range = +el.value; renderProgress(); };
 A.heat = el => { prog.heat = el.dataset.v; renderProgress(); };
-A.histDel = el => { if (!confirm('Delete this session from history?')) return; state.history = state.history.filter(h => h.id !== el.dataset.id); scheduleSave(); renderProgress(); };
+A.histMenu = el => { const h = state.history.find(x => x.id === el.dataset.id); if (!h) return; openSheet(h.name || 'Session', `<div class="col"><p class="mut sm">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')} · ${h.sets} sets · ${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</p><button class="btn danger full" data-a="histDel" data-id="${h.id}">Delete this session</button></div>`); };
+A.histDel = el => { if (!confirm('Delete this session from history?')) return; closeSheet(); state.history = state.history.filter(h => h.id !== el.dataset.id); scheduleSave(); renderProgress(); };
 
 /* ---------- body tab: measurements + photos ---------- */
 let bodyMetric = 'weight', photoUrls = [];
@@ -448,14 +467,23 @@ const BM = { weight: 'Body weight', bf: 'Body fat %', chest: 'Chest', waist: 'Wa
 function renderBody() {
   const u = unit() === 'kg' ? 'cm' : 'in', ms = [...state.measures].sort((a, b) => a.t - b.t);
   const pts = ms.filter(m => m[bodyMetric] != null && m[bodyMetric] !== '').map(m => ({ t: m.t, v: +m[bodyMetric] }));
-  const f = (k, l, ph) => `<div class="field"><label>${l}</label><input inputmode="decimal" id="mf-${k}" placeholder="${ph || ''}"></div>`;
+  const f = (k, l, ph) => `<div class="field"><label for="mf-${k}">${l}</label><input inputmode="decimal" id="mf-${k}" placeholder="${ph || ''}"></div>`;
+  const goal = state.profile.goal, MU = { weight: unit(), bf: '%', chest: u, waist: u, hips: u, arm: u, thigh: u };
+  const GOOD = { weight: goal === 'tone' ? -1 : goal === 'muscle' || goal === 'strength' ? 1 : 0, bf: -1, waist: -1, hips: -1, chest: 1, arm: 1, thigh: 1 };
+  const delta = (m, k) => {                         // change since the previous entry that had this measurement
+    const i = ms.indexOf(m); let prev = null; for (let j = i - 1; j >= 0; j--) if (ms[j][k] != null && ms[j][k] !== '') { prev = ms[j]; break; }
+    if (!prev) return ''; const d = Math.round((+m[k] - +prev[k]) * 100) / 100; if (!d) return '<span class="dl">0</span>';
+    const cls = !GOOD[k] ? '' : d * GOOD[k] > 0 ? 'gr' : 'rd';
+    return `<span class="dl ${cls}">${d > 0 ? '+' : '−'}${Math.abs(d)} ${MU[k]}</span>`;
+  };
   $('#tab-body').innerHTML = `
     <div class="card"><h2 class="h2">Log measurements</h2><p class="mut xs">Fill in whatever you measured today.</p>
-      <div class="grid3">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
+      <div class="grid3 pt8">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
       <button class="btn pri full mt8" data-a="measSave">Save measurements</button></div>
-    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div>${lineChart(pts)}</div>
-    <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="mini" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="mini pri" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : '<div class="empty">No photos yet. Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</div>'}</div></div>
-    <div class="card"><h2 class="h2">History</h2>${ms.length ? [...ms].reverse().slice(0, 15).map(m => `<div class="prow static"><div class="grow"><b>${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</b><div class="mut xs">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `${BM[k]} ${m[k]}`).join(' · ')}</div></div><button class="mini" data-a="measDel" data-id="${m.id}">${ic('close')}</button></div>`).join('') : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
+    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div>${lineChart(pts, { h: 190 })}</div>
+    <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="gpill" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="gpill add" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : `<div class="empty photoempty">${ic('image', 'xl')}<b>No photos yet</b><span>Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</span></div>`}</div></div>
+    <div class="card"><h2 class="h2">History</h2>${ms.length ? `<div class="tline">${[...ms].reverse().slice(0, 15).map(m => `<div class="tl"><span class="tdot"></span><div class="tlc"><div class="row sp"><span class="dpill">${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</span><button class="ib" data-a="measDel" data-id="${m.id}" aria-label="Delete entry">${ic('close')}</button></div>
+      <div class="mrows">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `<div class="mrow"><span>${BM[k]}</span><b>${m[k]} ${MU[k]}</b>${delta(m, k)}</div>`).join('')}</div></div></div>`).join('')}</div>` : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
   hydratePhotos();
 }
 R.body = renderBody;
@@ -499,7 +527,7 @@ async function syncWake() {
 }
 const tog = (k, l, d) => `<label class="trow"><span><b>${l}</b>${d ? `<em>${d}</em>` : ''}</span><input type="checkbox" class="sw" data-f="setting" data-k="${k}" ${state.settings[k] ? 'checked' : ''}></label>`;
 const moreOpen = new Set(); let moreInit = false;
-const grp = (k, icn, t, sub, body) => { const o = moreOpen.has(k); return `<section class="card grp ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic(icn)}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${ic(o ? 'down' : 'right')}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</section>`; };
+const grp = (k, icn, t, sub, body) => { const o = moreOpen.has(k); return `<div class="irow ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic(icn)}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${ic(o ? 'down' : 'right')}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</div>`; };
 function renderMore() {
   const p = state.profile, s = state.settings, G = GOALS[p.goal] || GOALS.muscle, standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!moreInit) { moreInit = true; if (backupDue() || !state.lastExport) moreOpen.add('data'); }
@@ -549,27 +577,26 @@ function renderMore() {
       <textarea id="json-ta" rows="8" class="mono">${esc(JSON.stringify(state.e1rm, null, 2))}</textarea><button class="btn pri full" data-a="jsonSave">Save baselines</button>`
   };
   const allOpen = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'].every(k => moreOpen.has(k));
+  const nm = profName(PROFILES.active), ini = (nm.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2) || 'ME').toUpperCase(), exp = p.experience ? p.experience[0].toUpperCase() + p.experience.slice(1) : '';
   $('#tab-more').innerHTML = `
-    <div class="card"><div class="row sp"><div><h2 class="h2">Your profile</h2><p class="mut sm">${G.label} · ${esc(p.experience)} · ${p.days} days/wk · ${p.sessionMin} min</p><p class="mut xs">${p.age} yrs · ${p.weight} ${p.unit}${p.cardio ? ' · cardio finisher' : ''}</p></div><button class="mini pri" data-a="obOpen">Edit</button></div></div>
+    <button class="card pbanner" data-a="obOpen" aria-label="Edit profile">
+      <div class="avatar" aria-hidden="true">${esc(ini)}</div>
+      <div class="grow"><b class="pname">${esc(nm)}</b>
+        <div class="pchips">${exp ? `<span>${esc(exp)}</span>` : ''}<span>${G.label}</span><span>${p.days}x/wk</span></div>
+        <div class="vit"><span><b>${p.age}</b> yrs</span><span><b>${p.weight}</b> ${p.unit}</span><span><b>${p.sessionMin}</b> min</span></div></div>
+      <span class="chev" aria-hidden="true">${ic('right')}</span></button>
     <div class="row sp px4"><span class="lbl">Settings</span><button class="link" data-a="moreAll">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
 
     <h3 class="grpt">Preferences</h3>
-    ${grp('display', 'palette', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}
-    ${grp('training', 'dumbbell', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}
-    ${grp('sound', 'volume', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}
-    ${grp('timers', 'timer', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}
+    <div class="card icard">${grp('display', 'palette', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}${grp('training', 'dumbbell', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}${grp('sound', 'volume', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}${grp('timers', 'timer', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}</div>
 
     <h3 class="grpt">Workout setup</h3>
-    ${grp('gear', 'wrench', 'Equipment', 'What you have available', sets.gear)}
-    ${grp('lib', 'library', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}
-    ${grp('people', 'users', 'People', 'Separate history for each person', sets.people)}
+    <div class="card icard">${grp('gear', 'wrench', 'Equipment', 'What you have available', sets.gear)}${grp('lib', 'library', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}${grp('people', 'users', 'People', 'Separate history for each person', sets.people)}</div>
 
     <h3 class="grpt">Data &amp; app</h3>
-    ${grp('data', 'database', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}
-    ${grp('integ', 'plug', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}
-    ${grp('adv', 'sliders', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}
+    <div class="card icard">${grp('data', 'database', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}${grp('integ', 'plug', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}${grp('adv', 'sliders', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}</div>
 
-    <p class="mut xs center">ForgeFit v${APP_VER} · private-first · no accounts, no tracking, no feeds.</p>`;
+    <p class="foot">ForgeFit v${APP_VER} · Private-First · Zero Tracking</p>`;
 }
 A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
 A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };
@@ -672,7 +699,7 @@ function bind() {
     if (!['toggleSet', 'cardioDone'].includes(el.dataset.a)) buzz('tap');
     try { fn(el, e); } catch (err) { console.error(err); toast('Something went wrong. Your data is safe.'); }
   });
-  document.addEventListener('input', e => { const el = e.target.closest('[data-f]'); if (el && isTextLike(el) && F[el.dataset.f]) F[el.dataset.f](el); });
+  document.addEventListener('input', e => { const el = e.target.closest('[data-f]'); if (el && (isTextLike(el) || el.dataset.live) && F[el.dataset.f]) F[el.dataset.f](el); });
   document.addEventListener('change', e => {
     const el = e.target.closest('[data-f]'); if (el && !isTextLike(el) && F[el.dataset.f]) F[el.dataset.f](el);
     if (e.target.id === 'photo-in' && e.target.files[0]) { addPhoto(e.target.files[0]); e.target.value = ''; }

@@ -21,6 +21,7 @@ exports.newPage = async (b, o = {}) => {
         if (sel === '[data-a=finish]' && !(await page.locator(sel).count())) await page.locator('[data-a=endWorkout]').first().click();
         const m = /^\[data-a=(nl|tplOpen|repeatLast|planOpen|regen|autoSuper|addEx|addCardio)\]$/.exec(sel);
         if (m && !(await page.locator(sel).count()) && await page.locator('[data-a=editWorkout]').count()) { await page.locator('[data-a=editWorkout]').first().click(); sel = `[data-a=editDo][data-x=${m[1]}]`; }
+        if (sel === '[data-a=repeatLast]' && !(await page.locator(sel).count()) && await page.locator('[data-a=wkMore]').count()) { await page.locator('[data-a=wkMore]').first().click(); sel = '[data-a=editDo][data-x=repeatLast]'; }
         const sp = /^\[data-a=split\](\[data-v=\w+\])$/.exec(sel);
         if (sp && !(await page.locator(sel).count()) && await page.locator('[data-a=editWorkout]').count()) { await page.locator('[data-a=editWorkout]').first().click(); sel = `[data-a=editDo][data-x=split]${sp[1]}`; }
       }
