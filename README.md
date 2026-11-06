@@ -14,3 +14,6 @@ A single-file workout PWA (plain HTML/CSS/JS, no frameworks). Netlify publishes 
 ## Updating phones
 Push to `main` → Netlify deploys → the app updates itself on next open (More → Check for updates forces it).
 `/reset.html` clears a stuck saved copy without touching workout data.
+
+## Deploy check
+Last pipeline test: 2026-11-06 01:44UTC (README-only change, app unchanged).
