@@ -292,3 +292,31 @@ a.btn{text-decoration:none}
 @keyframes ffrow{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}100%{box-shadow:0 0 0 14px rgba(16,185,129,0)}}
 @keyframes ffpop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 @keyframes fftro{0%{transform:scale(.3) rotate(-25deg);opacity:0}60%{transform:scale(1.2) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+
+/* ---------- v10: plan / live session, achievements, grouped settings ---------- */
+.card.plan{padding:12px}
+.card.plan .planmain{all:unset;box-sizing:border-box;display:block;cursor:pointer;min-width:0;padding:2px 0}
+.card.plan .planmain:focus-visible{outline:2px solid var(--or);outline-offset:3px;border-radius:8px}
+.card.plan .exn{margin:4px 0 2px}
+.card.sess{border-color:rgba(249,115,22,.45);background:linear-gradient(180deg,rgba(249,115,22,.08),transparent 70%),var(--card)}
+.card.sess.paused{border-color:rgba(245,158,11,.55);background:linear-gradient(180deg,rgba(245,158,11,.12),transparent 70%),var(--card)}
+.sess-time{display:block;font-size:30px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums;color:var(--or2)}
+.card.sess.paused .sess-time{color:var(--am-t,#f59e0b);opacity:.85}
+.lbl.live{color:#34d399}
+#exlist.dimmed{opacity:.6}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .btn{padding:12px 6px}
+.subh{margin:14px 2px 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.ach{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;margin-top:8px}
+.ach .aic{font-size:24px;line-height:1}
+.ach b{font-size:14px}
+.grpt{margin:18px 4px 2px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);font-weight:800}
+.card.grp{padding:0;overflow:hidden}
+.grph{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;cursor:pointer}
+.grph:focus-visible{outline:2px solid var(--or);outline-offset:-2px}
+.grph .gic{font-size:22px;width:30px;text-align:center}
+.grph b{display:block;font-size:15px}
+.grph em{display:block;font-style:normal;font-size:12px;color:var(--mut);margin-top:1px}
+.grph .chev{color:var(--mut);font-size:16px}
+.grpb{padding:2px 16px 16px;border-top:1px solid var(--bd);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){.card.sess.paused .sess-time{animation:ffblink 1.6s ease-in-out infinite}@keyframes ffblink{50%{opacity:.45}}}

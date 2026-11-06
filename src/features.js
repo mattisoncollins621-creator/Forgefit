@@ -228,7 +228,7 @@ function logQLToday(list) {
       const pr = applySetDone(it, s, ex); if (pr) prs.push(pr);
     }
   });
-  if (!wk().startedAt) wk().startedAt = Date.now();
+  ensureStarted();
   return prs;
 }
 function logQLPast(list, t) {      // saved straight to history on the chosen day
@@ -280,7 +280,7 @@ A.tplStart = el => {
   const t = state.templates.find(x => x.id === el.dataset.id); if (!t) return;
   if (doneSetCount() && !confirm('Replace your current session?')) return;
   const items = t.items.filter(i => exById(i.exId)).map(i => { const ex = exById(i.exId); return { id: uid(), exId: i.exId, superset: i.superset || null, tempo: ex.tempo, sets: i.sets.map(s => ({ weight: s.w, reps: s.r, rir: 2, fail: false, done: false, type: 'work' })) }; });
-  state.workout = { startedAt: null, name: t.name, split: '', note: 'From your routine', items }; normSS(); scheduleSave(); closeSheet(); go('workout');
+  state.workout = carrySession(wk(), { startedAt: null, name: t.name, split: '', note: 'From your routine', items }); normSS(); scheduleSave(); closeSheet(); go('workout');
 };
 const tplPayload = t => { const ids = new Set(t.items.map(i => i.exId)), custom = state.customExercises.filter(c => ids.has(c.id)); return JSON.stringify({ n: t.name, i: t.items, c: custom }); };
 const b64 = str => btoa(unescape(encodeURIComponent(str)));
@@ -498,71 +498,81 @@ async function syncWake() {
   } catch (e) { }
 }
 const tog = (k, l, d) => `<label class="trow"><span><b>${l}</b>${d ? `<em>${d}</em>` : ''}</span><input type="checkbox" class="sw" data-f="setting" data-k="${k}" ${state.settings[k] ? 'checked' : ''}></label>`;
+const moreOpen = new Set(); let moreInit = false;
+const grp = (k, ic, t, sub, body) => { const o = moreOpen.has(k); return `<section class="card grp ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${o ? '▾' : '▸'}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</section>`; };
 function renderMore() {
   const p = state.profile, s = state.settings, G = GOALS[p.goal] || GOALS.muscle, standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  $('#tab-more').innerHTML = `
-    <div class="card"><div class="row sp"><div><h2 class="h2">Your profile</h2><p class="mut sm">${G.label} · ${esc(p.experience)} · ${p.days} days/wk · ${p.sessionMin} min</p><p class="mut xs">${p.age} yrs · ${p.weight} ${p.unit}${p.cardio ? ' · cardio finisher' : ''}</p></div><button class="mini pri" data-a="obOpen">Edit</button></div></div>
-
-    <div class="card col"><h2 class="h2">Settings</h2>
-      <div class="field"><label>Appearance</label><div class="chips">${[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Match phone']].map(([k, l]) => `<button class="chip ${(s.theme || 'dark') === k ? 'on' : ''}" data-a="themeSet" data-v="${k}">${l}</button>`).join('')}</div></div>
+  if (!moreInit) { moreInit = true; if (backupDue() || !state.lastExport) moreOpen.add('data'); }
+  const sets = {
+    display: `<div class="field"><label>Appearance</label><div class="chips">${[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Match phone']].map(([k, l]) => `<button class="chip ${(s.theme || 'dark') === k ? 'on' : ''}" data-a="themeSet" data-v="${k}">${l}</button>`).join('')}</div></div>
       <div class="field"><label>Units</label><div class="chips"><button class="chip ${p.unit === 'lb' ? 'on' : ''}" data-a="unitSet" data-v="lb">lb</button><button class="chip ${p.unit === 'kg' ? 'on' : ''}" data-a="unitSet" data-v="kg">kg</button></div></div>
-      ${tog('rpe', 'Show RPE instead of RIR', 'RPE 8 = 2 reps in reserve')}
+      <div class="field"><label>Week starts on</label><select data-f="setting" data-k="weekStart"><option value="1" ${s.weekStart !== 0 ? 'selected' : ''}>Monday</option><option value="0" ${s.weekStart === 0 ? 'selected' : ''}>Sunday</option></select></div>`,
+    training: `${tog('rpe', 'Show RPE instead of RIR', 'RPE 8 = 2 reps in reserve')}
       ${tog('warmups', 'Warm-up set suggestions')}
       ${tog('prefill', 'Pre-fill sets from last session', 'Starts each set at the weight and reps you logged last time')}
-      <div class="field"><label>Week starts on</label><select data-f="setting" data-k="weekStart"><option value="1" ${s.weekStart !== 0 ? 'selected' : ''}>Monday</option><option value="0" ${s.weekStart === 0 ? 'selected' : ''}>Sunday</option></select></div>
-      <div class="sep"></div>
-      ${tog('sound', 'Sound cues', 'Set complete, tempo phases, timer end')}
-      <div class="grid2"><div class="field"><label>Tone</label><select data-f="setting" data-k="tone">${['beep', 'chime', 'tick'].map(t => `<option ${s.tone === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>Volume</label><input type="range" min="0" max="100" value="${Math.round(s.volume * 100)}" data-f="setting" data-k="volume"></div></div>
-      ${tog('haptics', 'Haptic feedback', navigator.vibrate ? 'Vibration on set and timer events' : 'Not supported by this browser (iOS Safari). Works in Android and native apps.')}
-      <div class="grid2"><div class="field"><label>Strength</label><select data-f="setting" data-k="haptic">${['light', 'medium', 'strong'].map(t => `<option ${s.haptic === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>&nbsp;</label><button class="btn sec" data-a="testFx">Test cues</button></div></div>
       <div class="sep"></div>
       <div class="grid2"><div class="field"><label>Rest: compound (s)</label><input inputmode="numeric" value="${s.restC ?? ''}" placeholder="auto ${G.restC}" data-f="setting" data-k="restC"></div><div class="field"><label>Rest: isolation (s)</label><input inputmode="numeric" value="${s.restI ?? ''}" placeholder="auto ${G.restI}" data-f="setting" data-k="restI"></div></div>
-      <div class="field"><label>Available plates per side (${p.unit})</label><input value="${s.plates.join(', ')}" data-f="platesCsv"></div>
+      <div class="field"><label>Available plates per side (${p.unit})</label><input value="${s.plates.join(', ')}" data-f="platesCsv"></div>`,
+    sound: `${tog('sound', 'Sound cues', 'Set complete, tempo phases, timer end')}
+      <div class="grid2"><div class="field"><label>Tone</label><select data-f="setting" data-k="tone">${['beep', 'chime', 'tick'].map(t => `<option ${s.tone === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>Volume</label><input type="range" min="0" max="100" value="${Math.round(s.volume * 100)}" data-f="setting" data-k="volume"></div></div>
       <div class="sep"></div>
-      ${tog('notify', 'Rest-timer notifications', 'Alert when the timer ends while the app is in the background')}
-      ${tog('wake', 'Keep screen awake', 'Uses more battery. Off by default.')}
-    </div>
-
-    <div class="card col"><h2 class="h2">Equipment</h2>
-      <div class="chips scrollx">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => `<button class="chip ${state.activeProfile === n ? 'on' : ''}" data-a="gearPreset" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+      ${tog('haptics', 'Haptic feedback', navigator.vibrate ? 'Vibration on set and timer events' : 'Not supported by this browser (iOS Safari). Works in Android and native apps.')}
+      <div class="grid2"><div class="field"><label>Strength</label><select data-f="setting" data-k="haptic">${['light', 'medium', 'strong'].map(t => `<option ${s.haptic === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>&nbsp;</label><button class="btn sec" data-a="testFx">Test cues</button></div></div>`,
+    timers: `${tog('notify', 'Rest-timer notifications', 'Alert when the timer ends while the app is in the background')}
+      ${tog('wake', 'Keep screen awake', 'Uses more battery. Off by default.')}`,
+    gear: `<div class="chips scrollx">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => `<button class="chip ${state.activeProfile === n ? 'on' : ''}" data-a="gearPreset" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
       <div class="gear">${Object.keys(state.gear).map(g => `<button class="${state.gear[g] ? 'on' : ''}" data-a="gearToggle" data-k="${esc(g)}"><span>${esc(gearLabel(g))}</span><b>${state.gear[g] ? '✓' : 'Off'}</b></button>`).join('')}</div>
       <div class="grid2"><button class="btn sec" data-a="gearAdd">＋ Add equipment</button><button class="btn sec" data-a="gearSave">Save as profile</button></div>
-      ${Object.keys(state.gearProfiles).length ? `<div class="mut xs">Saved profiles: ${Object.keys(state.gearProfiles).map(n => `${esc(n)} <button class="link" data-a="gearDelProfile" data-v="${esc(n)}">remove</button>`).join(' · ')}</div>` : ''}</div>
-
-    <div class="card col"><h2 class="h2">Plan &amp; library</h2>
-      <div class="grid2"><button class="btn sec" data-a="planOpen">📅 Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">📖 Exercise library</button></div></div>
-
-    <div class="card col"><div class="row sp"><h2 class="h2">Custom exercises</h2><button class="mini pri" data-a="cxOpen">＋ New</button></div>
-      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">✕</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}</div>
-
-    <div class="card col"><div class="row sp"><h2 class="h2">Routines</h2><button class="mini" data-a="tplOpen">Open</button></div>
-      <p class="mut sm">${state.templates.length} saved. Share is manual and opt-in: you copy a code, no accounts, feeds or leaderboards.</p></div>
-
-    ${profCard()}
-
-    <div class="card col"><h2 class="h2">Integrations</h2>
-      <div class="prow static"><div class="grow"><b>Live Activity / Dynamic Island</b><div class="mut xs">${LiveActivity.available() ? 'Connected: workout and rest timer are pushed to the lock screen.' : 'Needs the native iOS wrapper. Rest-timer and workout state are already exposed to it. In the browser you get the docked timer, notifications and tab title.'}</div></div><span class="tag ${LiveActivity.available() ? 'gr' : ''}">${LiveActivity.available() ? 'On' : 'Native only'}</span></div>
-      <div class="prow static"><div class="grow"><b>Apple Health · Google Fit · Samsung Health</b><div class="mut xs">${HealthBridge.available() ? 'Plugin detected. Completed workouts are written to your health app.' : 'Two-way sync needs HealthKit / Health Connect, which browsers cannot access. The bridge is wired for a Capacitor build.'}</div></div>${HealthBridge.available() ? `<input type="checkbox" class="sw" data-f="setting" data-k="healthSync" ${s.healthSync ? 'checked' : ''}>` : '<span class="tag">Native only</span>'}</div>
-      <div class="prow static"><div class="grow"><b>Apple Watch / Wear OS</b><div class="mut xs">Companion apps are native projects. Today, use the docked timer and haptics on your phone.</div></div><span class="tag">Native only</span></div>
-      ${standalone ? '' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}</div>
-
-    <div class="card col"><h2 class="h2">Data &amp; backup</h2>
-      <div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
+      ${Object.keys(state.gearProfiles).length ? `<div class="mut xs">Saved profiles: ${Object.keys(state.gearProfiles).map(n => `${esc(n)} <button class="link" data-a="gearDelProfile" data-v="${esc(n)}">remove</button>`).join(' · ')}</div>` : ''}`,
+    lib: `<div class="grid2"><button class="btn sec" data-a="planOpen">📅 Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">📖 Exercise library</button></div>
+      <div class="sep"></div>
+      <div class="row sp"><b>Routines</b><button class="mini" data-a="tplOpen">Open</button></div>
+      <p class="mut sm">${state.templates.length} saved. Share is manual and opt-in: you copy a code, no accounts, feeds or leaderboards.</p>
+      <div class="sep"></div>
+      <div class="row sp"><b>Custom exercises</b><button class="mini pri" data-a="cxOpen">＋ New</button></div>
+      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">✕</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}`,
+    people: profCard(true),
+    data: `<div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
       <p class="mut xs">Changes auto-save instantly with a rolling backup copy on this device${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. That protects against crashes, not against losing the phone.</p>
       <div class="grid2"><button class="btn sec" data-a="importJSON">Import backup</button><button class="btn sec" data-a="restoreBak">Restore auto-backup</button></div>
       <button class="btn sec full" data-a="exportCSV">Export CSV (spreadsheet)</button>
-      <button class="btn danger full" data-a="wipe">Erase all data</button></div>
+      <button class="btn danger full" data-a="wipe">Erase all data</button>`,
+    integ: `<div class="prow static"><div class="grow"><b>Live Activity / Dynamic Island</b><div class="mut xs">${LiveActivity.available() ? 'Connected: workout and rest timer are pushed to the lock screen.' : 'Needs the native iOS wrapper. Rest-timer and workout state are already exposed to it. In the browser you get the docked timer, notifications and tab title.'}</div></div><span class="tag ${LiveActivity.available() ? 'gr' : ''}">${LiveActivity.available() ? 'On' : 'Native only'}</span></div>
+      <div class="prow static"><div class="grow"><b>Apple Health · Google Fit · Samsung Health</b><div class="mut xs">${HealthBridge.available() ? 'Plugin detected. Completed workouts are written to your health app.' : 'Two-way sync needs HealthKit / Health Connect, which browsers cannot access. The bridge is wired for a Capacitor build.'}</div></div>${HealthBridge.available() ? `<input type="checkbox" class="sw" data-f="setting" data-k="healthSync" ${s.healthSync ? 'checked' : ''}>` : '<span class="tag">Native only</span>'}</div>
+      <div class="prow static"><div class="grow"><b>Apple Watch / Wear OS</b><div class="mut xs">Companion apps are native projects. Today, use the docked timer and haptics on your phone.</div></div><span class="tag">Native only</span></div>
+      ${standalone ? '' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}`,
+    adv: `<div class="row sp"><div class="grow"><b id="ver-line">ForgeFit v${APP_VER}</b><div class="mut xs">The app looks for updates every time you open it. Your workouts are never touched by an update.</div></div><button class="btn sec" data-a="checkUpdate">Check for updates</button></div>
+      <div class="sep"></div>
+      <b>Baseline e1RM editor</b>
+      <p class="mut xs">Edit starting estimated maxes as JSON (${p.unit}). Keys are exercise ids.</p>
+      <textarea id="json-ta" rows="8" class="mono">${esc(JSON.stringify(state.e1rm, null, 2))}</textarea><button class="btn pri full" data-a="jsonSave">Save baselines</button>`
+  };
+  const allOpen = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'].every(k => moreOpen.has(k));
+  $('#tab-more').innerHTML = `
+    <div class="card"><div class="row sp"><div><h2 class="h2">Your profile</h2><p class="mut sm">${G.label} · ${esc(p.experience)} · ${p.days} days/wk · ${p.sessionMin} min</p><p class="mut xs">${p.age} yrs · ${p.weight} ${p.unit}${p.cardio ? ' · cardio finisher' : ''}</p></div><button class="mini pri" data-a="obOpen">Edit</button></div></div>
+    <div class="row sp px4"><span class="lbl">Settings</span><button class="link" data-a="moreAll">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
 
-    <details class="card"><summary class="h2">Baseline e1RM editor</summary>
-      <p class="mut xs pt8">Edit starting estimated maxes as JSON (${p.unit}). Keys are exercise ids.</p>
-      <textarea id="json-ta" rows="8" class="mono">${esc(JSON.stringify(state.e1rm, null, 2))}</textarea><button class="btn pri full mt8" data-a="jsonSave">Save baselines</button></details>
+    <h3 class="grpt">Preferences</h3>
+    ${grp('display', '🎨', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}
+    ${grp('training', '🏋️', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}
+    ${grp('sound', '🔊', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}
+    ${grp('timers', '⏱', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}
 
-    <div class="card col"><h2 class="h2">App version</h2>
-      <div class="row sp"><div class="grow"><b id="ver-line">ForgeFit v${APP_VER}</b><div class="mut xs">The app looks for updates every time you open it. Your workouts are never touched by an update.</div></div><button class="btn sec" data-a="checkUpdate">Check for updates</button></div></div>
+    <h3 class="grpt">Workout setup</h3>
+    ${grp('gear', '🧰', 'Equipment', 'What you have available', sets.gear)}
+    ${grp('lib', '📚', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}
+    ${grp('people', '👥', 'People', 'Separate history for each person', sets.people)}
+
+    <h3 class="grpt">Data &amp; app</h3>
+    ${grp('data', '💾', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}
+    ${grp('integ', '🔗', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}
+    ${grp('adv', '⚙️', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}
 
     <p class="mut xs center">ForgeFit v${APP_VER} · private-first · no accounts, no tracking, no feeds.</p>`;
 }
+A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
+A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };
 R.more = renderMore;
 A.obOpen = () => openOnboarding(true);
 A.cxOpen = () => openCustom('');

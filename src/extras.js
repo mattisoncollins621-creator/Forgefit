@@ -109,7 +109,7 @@ A.repeatLast = () => {
   });
   (h.cardio || []).forEach(c => { const ex = exById(c.exId); if (ex) { const it = buildItem(ex, { min: c.min }); it.dist = c.dist || 0; items.push(it); } });
   if (!items.length) { toast('Nothing from that session can be repeated'); return; }
-  state.workout = { startedAt: null, name: (h.name || 'Workout').replace(/^Repeat: /, ''), split: h.split || '', note: `Repeat of ${fmtDate(h.t)}. Weights and reps match what you did.`, items };
+  state.workout = carrySession(wk(), { startedAt: null, name: (h.name || 'Workout').replace(/^Repeat: /, ''), split: h.split || '', note: `Repeat of ${fmtDate(h.t)}. Weights and reps match what you did.`, items });
   normSS(); scheduleSave(); renderWorkout(); window.scrollTo(0, 0); toast('Last workout loaded');
 };
 
@@ -326,11 +326,11 @@ async function switchProfile(id) {
   try { await Promise.race([idbPut('kv', { key: IDB_STATE, value: JSON.stringify(state) }), new Promise(r => setTimeout(r, 700))]); } catch (e) { }
   PROFILES.active = id; writeProfiles(); location.reload();
 }
-function profCard() {
+function profCard(inner) {
   const cur = PROFILES.active;
-  return `<div class="card col"><div class="row sp"><h2 class="h2">People on this phone</h2><button class="mini pri" data-a="profAdd">＋ Add</button></div>
+  return `${inner ? '' : '<div class="card col">'}<div class="row sp">${inner ? '<b>People on this phone</b>' : '<h2 class="h2">People on this phone</h2>'}<button class="mini pri" data-a="profAdd">＋ Add</button></div>
     <p class="mut sm">Each person gets their own workouts, history, photos and settings. Switching reloads the app.</p>
-    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">✕</button>` : ''}</div>`).join('')}</div>`;
+    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">✕</button>` : ''}</div>`).join('')}${inner ? '' : '</div>'}`;
 }
 A.profSwitch = el => { if (el.dataset.id !== PROFILES.active) switchProfile(el.dataset.id); };
 A.profMenu = () => openSheet('Switch person', `<div class="col">${PROFILES.list.map(p => `<button class="prow" data-a="profSwitch" data-id="${esc(p.id)}"><b>${esc(p.name)}</b>${p.id === PROFILES.active ? '<span class="tag gr">Active</span>' : ''}</button>`).join('')}</div>`);

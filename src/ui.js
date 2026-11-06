@@ -94,7 +94,7 @@ function generateWorkout(quiet) {
     pool = pool.filter(e => top.includes(e.primary));
   } else pool = pool.filter(e => e.split.includes(sp));
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
-  if (!pool.length) { state.workout = base; state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
+  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
   const scored = pool.map(ex => ({ ex, sc: rec(ex.primary) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
@@ -126,7 +126,7 @@ function generateWorkout(quiet) {
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');
   else { if (pre) bits.push('Pre-filled from last session where you have history'); bits.push(f < 1 ? `weights trimmed ${Math.round((1 - f) * 100)}% for recovery` : 'calibrated to recovery & e1RM history'); }
   const note = bits.join(' · ');
-  state.workout = { ...base, items, note: note.charAt(0).toUpperCase() + note.slice(1) };
+  state.workout = carrySession(wk(), { ...base, items, note: note.charAt(0).toUpperCase() + note.slice(1) });
   scheduleSave(); if (!quiet) renderWorkout();
 }
 const doneSetCount = () => wk().items.reduce((a, it) => a + (it.cardio ? (it.done ? 1 : 0) : it.sets.filter(s => s.done).length), 0);
@@ -158,10 +158,11 @@ function rirOpts(sel) {
 function cardHtml(i) {
   const it = wk().items[i], ex = exById(it.exId);
   if (!ex) return '';
+  if (!sessActive() && !planOpen.has(it.id || i)) return planRowHtml(i);
   const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
   if (it.cardio) {
     return `<article class="card ex" data-ex="${i}"><div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6"><span class="tag">Cardio</span>${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut sm">${esc(ex.cue || '')}</div></div>
-      <div class="row gap6"><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
       <div class="grid2 pt8"><div class="field"><label>Minutes</label><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}"></div>
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
       <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? '✓ Completed' : 'Mark complete'}</button></article>`;
@@ -184,7 +185,7 @@ function cardHtml(i) {
   return `<article class="card ex" data-ex="${i}">
     <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${ss}</div>
       <h3 class="exn">${esc(ex.name)}</h3>${last ? `<div class="mut xs">Last: ${last.slice(0, 4).map(s => `${s.w}×${s.r}`).join(' · ')}</div>` : ''}${noteLine(ex.id)}</div>
-      <div class="row gap6"><button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
     ${coach}
     <div class="shead"><span>Set</span><span>${unit()}</span><span>Reps</span><span>${state.settings.rpe ? 'RPE' : 'RIR'}</span><span></span></div>
     <div class="sets">${rows}</div>
@@ -206,8 +207,14 @@ function coachBanner() {
 function renderWorkout() {
   const w = wk(), tabEl = $('#tab-workout');
   const splits = [['auto', 'Smart'], ['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['upper', 'Upper'], ['lower', 'Lower'], ['full', 'Full']];
-  const sp = resolveSplit();
-  tabEl.innerHTML = `
+  const sp = resolveSplit(), live = sessActive();
+  const list = `<div id="exlist" class="col${sessPaused() ? ' dimmed' : ''}">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
+    <div class="row gap6"><button class="btn sec grow" data-a="addEx">＋ Add exercise</button><button class="btn sec grow" data-a="addCardio">🏃 Add cardio</button></div>`;
+  if (live) {
+    tabEl.innerHTML = `${sessHeader()}${list}
+    <button class="btn danger full big" data-a="endWorkout">■ End workout</button>`;
+  } else {
+    tabEl.innerHTML = `
     ${topBanners()}
     ${weekCard()}
     <div class="card"><div class="row sp"><span class="lbl">Training split</span><span class="tag gr">${state.split === 'auto' ? 'Smart: ' + esc(SPLIT_NAME[sp] || '') : esc(SPLIT_NAME[state.split])}</span></div>
@@ -215,11 +222,12 @@ function renderWorkout() {
       <div class="row gap6 pt8"><button class="btn vio grow" data-a="autoSuper">🔗 Auto-pair supersets</button><button class="btn pri grow" data-a="regen">⚡ Regenerate</button></div>
       <div class="row gap6 pt8"><button class="btn sec grow" data-a="nl">💬 Quick log</button><button class="btn sec grow" data-a="tplOpen">📋 Templates</button></div>
       <div class="row gap6 pt8"><button class="btn sec grow" data-a="repeatLast">↻ Repeat last workout</button><button class="btn sec grow" data-a="planOpen">📅 Plan</button></div></div>
-    <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right"><b class="or" id="svol">${sessionVolume().toLocaleString()} ${unit()}</b><div class="mut xs">Logged volume</div></div></div>
-    <div id="exlist" class="col">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
-    <div class="row gap6"><button class="btn sec grow" data-a="addEx">＋ Add exercise</button><button class="btn sec grow" data-a="addCardio">🏃 Add cardio</button></div>
-    <button class="btn ok full big" data-a="finish">✓ Complete &amp; log session</button>`;
-  paintClock();
+    <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right">${planSummary()}</div></div>
+    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}
+    ${list}
+    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}`;
+  }
+  paintClock(); tickSess();
 }
 R.workout = renderWorkout;
 function refreshCard(i) {
@@ -228,12 +236,11 @@ function refreshCard(i) {
   const open = el.querySelector('details') && el.querySelector('details').open;
   el.replaceWith(t.firstElementChild);
   if (open) { const d = $(`#exlist [data-ex="${i}"] details`); if (d) d.open = true; }
-  const v = $('#svol'); if (v) v.textContent = sessionVolume().toLocaleString() + ' ' + unit();
+  paintSessStats();
 }
 function paintClock() {
-  const c = $('#clock'), s = wk().startedAt;
-  if (!s) { c.hidden = true; return; }
-  c.hidden = false; const m = Math.floor((Date.now() - s) / 6e4); c.textContent = '⏱ ' + (m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm');
+  const c = $('#clock'); if (!sessActive()) { c.hidden = true; return; }
+  c.hidden = false; c.textContent = (sessPaused() ? '⏸ ' : '⏱ ') + fmtClock(sessMs());
 }
 
 /* ---------- workout actions ---------- */
@@ -243,12 +250,12 @@ A.tadj = el => adjustTimer(+el.dataset.n);
 A.tskip = () => { stopRestTimerQuiet(); LiveActivity.sync(); scheduleSave(); };
 A.regen = () => { if (doneSetCount() && !confirm('Regenerate and discard logged sets?')) return; if (doneSetCount()) wk().items.forEach(it => (it.sets || []).forEach(s => { if (s.done) { const ex = exById(it.exId); if (ex) undoSet(it, s, ex); } })); generateWorkout(); };
 A.toggleSet = el => {
-  const i = +el.dataset.i, j = +el.dataset.j, it = wk().items[i], s = it.sets[j], ex = exById(it.exId);
+  const i = +el.dataset.i, j = +el.dataset.j, it = wk().items[i], s = it.sets[j], ex = exById(it.exId), wasLive = sessActive();
   if (!s.done) {
     if (!(+s.reps > 0)) { toast('Enter reps first'); return; }
     audio();
     const pr = applySetDone(it, s, ex);
-    if (!wk().startedAt) { wk().startedAt = Date.now(); LiveActivity.sync(); }
+    ensureStarted();
     buzz('set'); cue('set');
     const g = GOALS[state.profile.goal] || GOALS.muscle, st = state.settings;
     const trans = it.superset && it.superset.endsWith('1');
@@ -256,17 +263,17 @@ A.toggleSet = el => {
     startTimer(rest, trans ? `Superset ${it.superset} → next` : `Rest · ${ex.name}`);
     if (pr) showPR(pr);
   } else undoSet(it, s, ex);
-  scheduleSave(); refreshCard(i);
+  scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i);
   if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } }
 };
 F.set = el => {
   const i = +el.dataset.i, j = +el.dataset.j, k = el.dataset.k, s = wk().items[i] && wk().items[i].sets[j]; if (!s) return;
   if (k === 'rir') { if (el.value === 'F') { s.fail = true; s.rir = 0; } else { s.fail = false; s.rir = +el.value; } }
   else s[k] = el.value === '' ? 0 : Math.max(0, Number(String(el.value).replace(',', '.')) || 0);
-  scheduleSave(); const v = $('#svol'); if (v) v.textContent = sessionVolume().toLocaleString() + ' ' + unit();
+  scheduleSave(); paintSessStats();
 };
 F.cardio = el => { const it = wk().items[+el.dataset.i]; if (it) { it[el.dataset.k] = Math.max(0, Number(String(el.value).replace(',', '.')) || 0); scheduleSave(); } };
-A.cardioDone = el => { const i = +el.dataset.i, it = wk().items[i]; it.done = !it.done; if (it.done && !wk().startedAt) wk().startedAt = Date.now(); buzz('set'); cue('set'); scheduleSave(); refreshCard(i); };
+A.cardioDone = el => { const i = +el.dataset.i, it = wk().items[i], wasLive = sessActive(); it.done = !it.done; if (it.done) ensureStarted(); buzz('set'); cue('set'); scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i); };
 A.addSet = el => {
   const i = +el.dataset.i, it = wk().items[i], last = [...it.sets].reverse().find(s => s.type === 'work') || it.sets[it.sets.length - 1] || { weight: 0, reps: 10, rir: 2 };
   it.sets.push({ weight: last.weight, reps: last.reps, rir: last.rir ?? 2, fail: false, done: false, type: 'work' }); scheduleSave(); refreshCard(i);
@@ -552,43 +559,9 @@ A.endDeload = () => { state.deload = null; if (state.block && blockDeload()) sta
 
 /* ---------- finish session ---------- */
 const setVol = (ex, s) => loadOf(ex, s) * (+s.reps || 0);
-A.finish = () => {
-  const w = wk(), now = Date.now();
-  if (!doneSetCount()) { toast('Log at least one set or cardio first'); return; }
-  cue('finish'); buzz('finish');
-  const items = [], cardio = []; let sets = 0, vol = 0, prs = 0;
-  w.items.forEach(it => {
-    const ex = exById(it.exId); if (!ex) return;
-    if (it.cardio) { if (it.done) cardio.push({ exId: ex.id, name: ex.name, min: +it.min || 0, dist: +it.dist || 0 }); return; }
-    const done = it.sets.filter(s => s.done); if (!done.length) return;
-    done.forEach(s => { if (s.type !== 'warmup') { sets++; vol += setVol(ex, s); } if (s.pr) prs++; });
-    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], sets: done.map(s => ({ w: +s.weight || 0, r: +s.reps || 0, rir: +s.rir || 0, fail: !!s.fail, type: s.type || 'work', pct: s.pct ?? null })) });
-    if (!ex.noE1) { const best = Math.max(0, ...done.filter(s => s.type === 'work').map(s => est1(ex, s))); if (best > 0) { (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []).push({ t: now, v: Math.round(best) }); if (state.e1rmHist[ex.id].length > 400) state.e1rmHist[ex.id].shift(); } }
-  });
-  const rec = { id: uid(), t: now, name: w.name, split: w.split || '', sets, vol: Math.round(vol), dur: w.startedAt ? Math.max(1, Math.round((now - w.startedAt) / 6e4)) : 0, unit: unit(), prs, items, cardio };
-  if (isDeload()) rec.deload = true;
-  state.history.unshift(rec); state.history = state.history.slice(0, 400);
-  HealthBridge.writeWorkout({ start: w.startedAt || now, end: now, name: w.name, calories: null });
-  LiveActivity.end(); stopRestTimerQuiet();
-  window.__lastSession = { rec, tpl: w.items.filter(it => !it.cardio).map(it => ({ exId: it.exId, superset: it.superset, sets: it.sets.filter(s => s.type !== 'warmup').map(s => ({ w: +s.weight, r: +s.reps })) })) };
-  scheduleSave(); flushSave(); generateWorkout(true);
-  const tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
-  openSheet('Session complete 💪', `<div class="col"><div class="tiles">${tile(rec.dur ? rec.dur + 'm' : '—', 'Duration')}${tile(sets, 'Hard sets')}${tile(rec.vol.toLocaleString(), unit() + ' volume')}${tile(prs, 'PRs')}</div>
-    ${streakLine()}
-    ${items.map(i => `<div class="prow static"><b>${esc(i.name)}</b><span class="mut xs">${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(' · ')}</span></div>`).join('')}
-    ${cardio.map(c => `<div class="prow static"><b>${esc(c.name)}</b><span class="mut xs">${c.min} min${c.dist ? ' · ' + c.dist : ''}</span></div>`).join('')}
-    <div class="grid2"><button class="btn sec" data-a="sessTpl">Save as routine</button><button class="btn sec" data-a="sessShare">Share summary</button></div>
-    <button class="btn pri full" data-a="closeSheet">Done</button></div>`, { onClose: () => go('recovery') });
-};
+/* A.finish lives in session.js */
 function stopRestTimerQuiet() { state.timer = null; clearInterval(tInt); clearTimeout(tBg); $('#tbar').hidden = true; }
 A.sessTpl = () => { const s = window.__lastSession; ask('Save routine', 'Routine name', s.rec.name.replace(' Session', ''), n => saveTemplate(n, s.tpl)); };
-A.sessShare = () => {
-  const r = window.__lastSession.rec, lines = [`ForgeFit · ${r.name} · ${fmtDate(r.t)}`, `${r.sets} sets · ${r.vol.toLocaleString()} ${r.unit} volume${r.dur ? ' · ' + r.dur + ' min' : ''}`, ''];
-  r.items.forEach(i => lines.push(`${i.name}: ${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(', ')}`));
-  r.cardio.forEach(c => lines.push(`${c.name}: ${c.min} min${c.dist ? ', ' + c.dist : ''}`));
-  shareText(lines.join('\n'), 'My workout');
-};
-
 /* ---------- recovery tab ---------- */
 function renderRecovery() {
   updatePassiveRecovery();

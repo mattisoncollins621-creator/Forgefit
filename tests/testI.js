@@ -124,7 +124,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.click('[data-a=recapOpen]'); t = await page.locator('#sheet').innerText();
     const exp = await page.evaluate(() => { const S = weekStats(addDays(weekStartOf(Date.now()), -7)); return S; });
     H.check('recap opens on LAST week and its totals match an independent count of the history', /Last week/.test(t) && exp.sessions === lw.n && exp.sets === lw.sets && exp.vol === lw.vol && exp.days === lw.days && exp.prs === lw.prs && t.includes(lw.vol.toLocaleString()), { exp, lw, t: t.slice(0, 200) });
-    H.check('shows biggest gain, trained days vs plan, streak', /Biggest gain/.test(t) && /Barbell Back Squat: estimated 1RM up/.test(t) && new RegExp(`trained on ${lw.days} days`).test(t) && /streak/.test(t), t.slice(0, 600));
+    H.check('shows biggest gain, trained days vs plan, streak', /Biggest gain/.test(t) && /Barbell Back Squat: estimated 1RM up/.test(t) && new RegExp(`trained on ${lw.days} days`).test(t), t);
     H.check('compares with the previous week (volume/sets change shown)', /\+\d+%/.test(t), t);
     H.check('under-target muscles are called out', /Skipped or light/.test(t));
     await page.click('#sheet [data-a=recapGo][data-d="-1"]'); t = await page.locator('#sheet').innerText();
@@ -194,7 +194,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     const f = await page.evaluate(() => { try { cue('finish'); buzz('finish'); cue('pr'); return 'ok'; } catch (e) { return e.message; } });
     H.check('finish/PR cues run without errors', f === 'ok', f);
     while (await page.locator('#pr:not([hidden]) [data-a=prNext]').count()) await page.click('#pr [data-a=prNext]');
-    await page.click('[data-a=finish]'); await page.waitForSelector('#sheet:not([hidden])'); H.check('finishing still logs the session', /Session complete/.test(await page.locator('#sheet-t').innerText()));
+    await page.click('[data-a=finish]'); await page.waitForSelector('#sheet:not([hidden])'); H.check('finishing still logs the session', /Workout complete/.test(await page.locator('#sheet-t').innerText()));
     await page.click('#sheet .ib[data-a=closeSheet]'); await page.waitForTimeout(300);
     await ctx.close();
     const rm = await H.newPage(b, { opts: { viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' } });

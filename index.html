@@ -307,6 +307,34 @@ a.btn{text-decoration:none}
 @keyframes ffrow{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}100%{box-shadow:0 0 0 14px rgba(16,185,129,0)}}
 @keyframes ffpop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 @keyframes fftro{0%{transform:scale(.3) rotate(-25deg);opacity:0}60%{transform:scale(1.2) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+
+/* ---------- v10: plan / live session, achievements, grouped settings ---------- */
+.card.plan{padding:12px}
+.card.plan .planmain{all:unset;box-sizing:border-box;display:block;cursor:pointer;min-width:0;padding:2px 0}
+.card.plan .planmain:focus-visible{outline:2px solid var(--or);outline-offset:3px;border-radius:8px}
+.card.plan .exn{margin:4px 0 2px}
+.card.sess{border-color:rgba(249,115,22,.45);background:linear-gradient(180deg,rgba(249,115,22,.08),transparent 70%),var(--card)}
+.card.sess.paused{border-color:rgba(245,158,11,.55);background:linear-gradient(180deg,rgba(245,158,11,.12),transparent 70%),var(--card)}
+.sess-time{display:block;font-size:30px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums;color:var(--or2)}
+.card.sess.paused .sess-time{color:var(--am-t,#f59e0b);opacity:.85}
+.lbl.live{color:#34d399}
+#exlist.dimmed{opacity:.6}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .btn{padding:12px 6px}
+.subh{margin:14px 2px 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.ach{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;margin-top:8px}
+.ach .aic{font-size:24px;line-height:1}
+.ach b{font-size:14px}
+.grpt{margin:18px 4px 2px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);font-weight:800}
+.card.grp{padding:0;overflow:hidden}
+.grph{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;cursor:pointer}
+.grph:focus-visible{outline:2px solid var(--or);outline-offset:-2px}
+.grph .gic{font-size:22px;width:30px;text-align:center}
+.grph b{display:block;font-size:15px}
+.grph em{display:block;font-style:normal;font-size:12px;color:var(--mut);margin-top:1px}
+.grph .chev{color:var(--mut);font-size:16px}
+.grpb{padding:2px 16px 16px;border-top:1px solid var(--bd);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){.card.sess.paused .sess-time{animation:ffblink 1.6s ease-in-out infinite}@keyframes ffblink{50%{opacity:.45}}}
 </style>
 </head>
 <body>
@@ -370,12 +398,19 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KG = 0.45359237;
+/* ---------- live session (started / paused) ---------- */
+const SESSK = ['startedAt', 'pausedAt', 'pausedMs', 'pausedRest', 'pausedLabel'];
+const carrySession = (from, to) => { SESSK.forEach(k => { if (from && from[k]) to[k] = from[k]; }); return to; };
+const sessActive = () => !!state.workout.startedAt;
+const sessPaused = () => !!(state.workout.startedAt && state.workout.pausedAt);
+const sessMs = (now = Date.now()) => { const w = state.workout; return w.startedAt ? Math.max(0, (w.pausedAt || now) - w.startedAt - (w.pausedMs || 0)) : 0; };
+const clearSession = w => { SESSK.forEach(k => { delete w[k]; }); w.startedAt = null; w.pausedAt = null; w.pausedMs = 0; return w; };
 const DAY = 864e5;
 const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 'short', day: 'numeric' });
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const APP_VER = '9';   // filled in by build.py from sw.js so the two can never disagree
+const APP_VER = '10';   // filled in by build.py from sw.js so the two can never disagree
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- exercise database ---------- */
@@ -605,7 +640,7 @@ function defaultState() {
     settings: { rpe: false, sound: true, volume: .6, tone: 'beep', haptics: true, haptic: 'medium', restC: null, restI: null, notify: false, wake: false, bar: 45, plates: [45, 35, 25, 10, 5, 2.5], warmups: true, healthSync: false, prefill: true, theme: 'dark', weekStart: 1 },
     muscles, gear: { ...GEAR_DEFAULT }, gearProfiles: {}, activeProfile: 'Home Gym',
     e1rm: {}, e1rmHist: {}, prs: {}, split: 'auto',
-    workout: { startedAt: null, name: "Today's Session", note: '', items: [] },
+    workout: { startedAt: null, pausedAt: null, pausedMs: 0, name: "Today's Session", note: '', items: [] },
     customExercises: [], history: [], templates: [], measures: [], photos: [],
     timer: null, deload: null, lastDeload: 0, lastTick: Date.now(), lastBackup: 0,
     createdAt: Date.now(), lastExport: 0, backupSnooze: 0, nudgeSnooze: 0, block: null, seen: {}, favs: [], exNotes: {}
@@ -980,7 +1015,7 @@ function generateWorkout(quiet) {
     pool = pool.filter(e => top.includes(e.primary));
   } else pool = pool.filter(e => e.split.includes(sp));
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
-  if (!pool.length) { state.workout = base; state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
+  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
   const scored = pool.map(ex => ({ ex, sc: rec(ex.primary) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
@@ -1012,7 +1047,7 @@ function generateWorkout(quiet) {
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');
   else { if (pre) bits.push('Pre-filled from last session where you have history'); bits.push(f < 1 ? `weights trimmed ${Math.round((1 - f) * 100)}% for recovery` : 'calibrated to recovery & e1RM history'); }
   const note = bits.join(' · ');
-  state.workout = { ...base, items, note: note.charAt(0).toUpperCase() + note.slice(1) };
+  state.workout = carrySession(wk(), { ...base, items, note: note.charAt(0).toUpperCase() + note.slice(1) });
   scheduleSave(); if (!quiet) renderWorkout();
 }
 const doneSetCount = () => wk().items.reduce((a, it) => a + (it.cardio ? (it.done ? 1 : 0) : it.sets.filter(s => s.done).length), 0);
@@ -1044,10 +1079,11 @@ function rirOpts(sel) {
 function cardHtml(i) {
   const it = wk().items[i], ex = exById(it.exId);
   if (!ex) return '';
+  if (!sessActive() && !planOpen.has(it.id || i)) return planRowHtml(i);
   const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
   if (it.cardio) {
     return `<article class="card ex" data-ex="${i}"><div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6"><span class="tag">Cardio</span>${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut sm">${esc(ex.cue || '')}</div></div>
-      <div class="row gap6"><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
       <div class="grid2 pt8"><div class="field"><label>Minutes</label><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}"></div>
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
       <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? '✓ Completed' : 'Mark complete'}</button></article>`;
@@ -1070,7 +1106,7 @@ function cardHtml(i) {
   return `<article class="card ex" data-ex="${i}">
     <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${ss}</div>
       <h3 class="exn">${esc(ex.name)}</h3>${last ? `<div class="mut xs">Last: ${last.slice(0, 4).map(s => `${s.w}×${s.r}`).join(' · ')}</div>` : ''}${noteLine(ex.id)}</div>
-      <div class="row gap6"><button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
     ${coach}
     <div class="shead"><span>Set</span><span>${unit()}</span><span>Reps</span><span>${state.settings.rpe ? 'RPE' : 'RIR'}</span><span></span></div>
     <div class="sets">${rows}</div>
@@ -1092,8 +1128,14 @@ function coachBanner() {
 function renderWorkout() {
   const w = wk(), tabEl = $('#tab-workout');
   const splits = [['auto', 'Smart'], ['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['upper', 'Upper'], ['lower', 'Lower'], ['full', 'Full']];
-  const sp = resolveSplit();
-  tabEl.innerHTML = `
+  const sp = resolveSplit(), live = sessActive();
+  const list = `<div id="exlist" class="col${sessPaused() ? ' dimmed' : ''}">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
+    <div class="row gap6"><button class="btn sec grow" data-a="addEx">＋ Add exercise</button><button class="btn sec grow" data-a="addCardio">🏃 Add cardio</button></div>`;
+  if (live) {
+    tabEl.innerHTML = `${sessHeader()}${list}
+    <button class="btn danger full big" data-a="endWorkout">■ End workout</button>`;
+  } else {
+    tabEl.innerHTML = `
     ${topBanners()}
     ${weekCard()}
     <div class="card"><div class="row sp"><span class="lbl">Training split</span><span class="tag gr">${state.split === 'auto' ? 'Smart: ' + esc(SPLIT_NAME[sp] || '') : esc(SPLIT_NAME[state.split])}</span></div>
@@ -1101,11 +1143,12 @@ function renderWorkout() {
       <div class="row gap6 pt8"><button class="btn vio grow" data-a="autoSuper">🔗 Auto-pair supersets</button><button class="btn pri grow" data-a="regen">⚡ Regenerate</button></div>
       <div class="row gap6 pt8"><button class="btn sec grow" data-a="nl">💬 Quick log</button><button class="btn sec grow" data-a="tplOpen">📋 Templates</button></div>
       <div class="row gap6 pt8"><button class="btn sec grow" data-a="repeatLast">↻ Repeat last workout</button><button class="btn sec grow" data-a="planOpen">📅 Plan</button></div></div>
-    <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right"><b class="or" id="svol">${sessionVolume().toLocaleString()} ${unit()}</b><div class="mut xs">Logged volume</div></div></div>
-    <div id="exlist" class="col">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
-    <div class="row gap6"><button class="btn sec grow" data-a="addEx">＋ Add exercise</button><button class="btn sec grow" data-a="addCardio">🏃 Add cardio</button></div>
-    <button class="btn ok full big" data-a="finish">✓ Complete &amp; log session</button>`;
-  paintClock();
+    <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right">${planSummary()}</div></div>
+    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}
+    ${list}
+    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}`;
+  }
+  paintClock(); tickSess();
 }
 R.workout = renderWorkout;
 function refreshCard(i) {
@@ -1114,12 +1157,11 @@ function refreshCard(i) {
   const open = el.querySelector('details') && el.querySelector('details').open;
   el.replaceWith(t.firstElementChild);
   if (open) { const d = $(`#exlist [data-ex="${i}"] details`); if (d) d.open = true; }
-  const v = $('#svol'); if (v) v.textContent = sessionVolume().toLocaleString() + ' ' + unit();
+  paintSessStats();
 }
 function paintClock() {
-  const c = $('#clock'), s = wk().startedAt;
-  if (!s) { c.hidden = true; return; }
-  c.hidden = false; const m = Math.floor((Date.now() - s) / 6e4); c.textContent = '⏱ ' + (m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm');
+  const c = $('#clock'); if (!sessActive()) { c.hidden = true; return; }
+  c.hidden = false; c.textContent = (sessPaused() ? '⏸ ' : '⏱ ') + fmtClock(sessMs());
 }
 
 /* ---------- workout actions ---------- */
@@ -1129,12 +1171,12 @@ A.tadj = el => adjustTimer(+el.dataset.n);
 A.tskip = () => { stopRestTimerQuiet(); LiveActivity.sync(); scheduleSave(); };
 A.regen = () => { if (doneSetCount() && !confirm('Regenerate and discard logged sets?')) return; if (doneSetCount()) wk().items.forEach(it => (it.sets || []).forEach(s => { if (s.done) { const ex = exById(it.exId); if (ex) undoSet(it, s, ex); } })); generateWorkout(); };
 A.toggleSet = el => {
-  const i = +el.dataset.i, j = +el.dataset.j, it = wk().items[i], s = it.sets[j], ex = exById(it.exId);
+  const i = +el.dataset.i, j = +el.dataset.j, it = wk().items[i], s = it.sets[j], ex = exById(it.exId), wasLive = sessActive();
   if (!s.done) {
     if (!(+s.reps > 0)) { toast('Enter reps first'); return; }
     audio();
     const pr = applySetDone(it, s, ex);
-    if (!wk().startedAt) { wk().startedAt = Date.now(); LiveActivity.sync(); }
+    ensureStarted();
     buzz('set'); cue('set');
     const g = GOALS[state.profile.goal] || GOALS.muscle, st = state.settings;
     const trans = it.superset && it.superset.endsWith('1');
@@ -1142,17 +1184,17 @@ A.toggleSet = el => {
     startTimer(rest, trans ? `Superset ${it.superset} → next` : `Rest · ${ex.name}`);
     if (pr) showPR(pr);
   } else undoSet(it, s, ex);
-  scheduleSave(); refreshCard(i);
+  scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i);
   if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } }
 };
 F.set = el => {
   const i = +el.dataset.i, j = +el.dataset.j, k = el.dataset.k, s = wk().items[i] && wk().items[i].sets[j]; if (!s) return;
   if (k === 'rir') { if (el.value === 'F') { s.fail = true; s.rir = 0; } else { s.fail = false; s.rir = +el.value; } }
   else s[k] = el.value === '' ? 0 : Math.max(0, Number(String(el.value).replace(',', '.')) || 0);
-  scheduleSave(); const v = $('#svol'); if (v) v.textContent = sessionVolume().toLocaleString() + ' ' + unit();
+  scheduleSave(); paintSessStats();
 };
 F.cardio = el => { const it = wk().items[+el.dataset.i]; if (it) { it[el.dataset.k] = Math.max(0, Number(String(el.value).replace(',', '.')) || 0); scheduleSave(); } };
-A.cardioDone = el => { const i = +el.dataset.i, it = wk().items[i]; it.done = !it.done; if (it.done && !wk().startedAt) wk().startedAt = Date.now(); buzz('set'); cue('set'); scheduleSave(); refreshCard(i); };
+A.cardioDone = el => { const i = +el.dataset.i, it = wk().items[i], wasLive = sessActive(); it.done = !it.done; if (it.done) ensureStarted(); buzz('set'); cue('set'); scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i); };
 A.addSet = el => {
   const i = +el.dataset.i, it = wk().items[i], last = [...it.sets].reverse().find(s => s.type === 'work') || it.sets[it.sets.length - 1] || { weight: 0, reps: 10, rir: 2 };
   it.sets.push({ weight: last.weight, reps: last.reps, rir: last.rir ?? 2, fail: false, done: false, type: 'work' }); scheduleSave(); refreshCard(i);
@@ -1438,43 +1480,9 @@ A.endDeload = () => { state.deload = null; if (state.block && blockDeload()) sta
 
 /* ---------- finish session ---------- */
 const setVol = (ex, s) => loadOf(ex, s) * (+s.reps || 0);
-A.finish = () => {
-  const w = wk(), now = Date.now();
-  if (!doneSetCount()) { toast('Log at least one set or cardio first'); return; }
-  cue('finish'); buzz('finish');
-  const items = [], cardio = []; let sets = 0, vol = 0, prs = 0;
-  w.items.forEach(it => {
-    const ex = exById(it.exId); if (!ex) return;
-    if (it.cardio) { if (it.done) cardio.push({ exId: ex.id, name: ex.name, min: +it.min || 0, dist: +it.dist || 0 }); return; }
-    const done = it.sets.filter(s => s.done); if (!done.length) return;
-    done.forEach(s => { if (s.type !== 'warmup') { sets++; vol += setVol(ex, s); } if (s.pr) prs++; });
-    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], sets: done.map(s => ({ w: +s.weight || 0, r: +s.reps || 0, rir: +s.rir || 0, fail: !!s.fail, type: s.type || 'work', pct: s.pct ?? null })) });
-    if (!ex.noE1) { const best = Math.max(0, ...done.filter(s => s.type === 'work').map(s => est1(ex, s))); if (best > 0) { (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []).push({ t: now, v: Math.round(best) }); if (state.e1rmHist[ex.id].length > 400) state.e1rmHist[ex.id].shift(); } }
-  });
-  const rec = { id: uid(), t: now, name: w.name, split: w.split || '', sets, vol: Math.round(vol), dur: w.startedAt ? Math.max(1, Math.round((now - w.startedAt) / 6e4)) : 0, unit: unit(), prs, items, cardio };
-  if (isDeload()) rec.deload = true;
-  state.history.unshift(rec); state.history = state.history.slice(0, 400);
-  HealthBridge.writeWorkout({ start: w.startedAt || now, end: now, name: w.name, calories: null });
-  LiveActivity.end(); stopRestTimerQuiet();
-  window.__lastSession = { rec, tpl: w.items.filter(it => !it.cardio).map(it => ({ exId: it.exId, superset: it.superset, sets: it.sets.filter(s => s.type !== 'warmup').map(s => ({ w: +s.weight, r: +s.reps })) })) };
-  scheduleSave(); flushSave(); generateWorkout(true);
-  const tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
-  openSheet('Session complete 💪', `<div class="col"><div class="tiles">${tile(rec.dur ? rec.dur + 'm' : '—', 'Duration')}${tile(sets, 'Hard sets')}${tile(rec.vol.toLocaleString(), unit() + ' volume')}${tile(prs, 'PRs')}</div>
-    ${streakLine()}
-    ${items.map(i => `<div class="prow static"><b>${esc(i.name)}</b><span class="mut xs">${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(' · ')}</span></div>`).join('')}
-    ${cardio.map(c => `<div class="prow static"><b>${esc(c.name)}</b><span class="mut xs">${c.min} min${c.dist ? ' · ' + c.dist : ''}</span></div>`).join('')}
-    <div class="grid2"><button class="btn sec" data-a="sessTpl">Save as routine</button><button class="btn sec" data-a="sessShare">Share summary</button></div>
-    <button class="btn pri full" data-a="closeSheet">Done</button></div>`, { onClose: () => go('recovery') });
-};
+/* A.finish lives in session.js */
 function stopRestTimerQuiet() { state.timer = null; clearInterval(tInt); clearTimeout(tBg); $('#tbar').hidden = true; }
 A.sessTpl = () => { const s = window.__lastSession; ask('Save routine', 'Routine name', s.rec.name.replace(' Session', ''), n => saveTemplate(n, s.tpl)); };
-A.sessShare = () => {
-  const r = window.__lastSession.rec, lines = [`ForgeFit · ${r.name} · ${fmtDate(r.t)}`, `${r.sets} sets · ${r.vol.toLocaleString()} ${r.unit} volume${r.dur ? ' · ' + r.dur + ' min' : ''}`, ''];
-  r.items.forEach(i => lines.push(`${i.name}: ${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(', ')}`));
-  r.cardio.forEach(c => lines.push(`${c.name}: ${c.min} min${c.dist ? ', ' + c.dist : ''}`));
-  shareText(lines.join('\n'), 'My workout');
-};
-
 /* ---------- recovery tab ---------- */
 function renderRecovery() {
   updatePassiveRecovery();
@@ -1611,7 +1619,7 @@ A.repeatLast = () => {
   });
   (h.cardio || []).forEach(c => { const ex = exById(c.exId); if (ex) { const it = buildItem(ex, { min: c.min }); it.dist = c.dist || 0; items.push(it); } });
   if (!items.length) { toast('Nothing from that session can be repeated'); return; }
-  state.workout = { startedAt: null, name: (h.name || 'Workout').replace(/^Repeat: /, ''), split: h.split || '', note: `Repeat of ${fmtDate(h.t)}. Weights and reps match what you did.`, items };
+  state.workout = carrySession(wk(), { startedAt: null, name: (h.name || 'Workout').replace(/^Repeat: /, ''), split: h.split || '', note: `Repeat of ${fmtDate(h.t)}. Weights and reps match what you did.`, items });
   normSS(); scheduleSave(); renderWorkout(); window.scrollTo(0, 0); toast('Last workout loaded');
 };
 
@@ -1828,11 +1836,11 @@ async function switchProfile(id) {
   try { await Promise.race([idbPut('kv', { key: IDB_STATE, value: JSON.stringify(state) }), new Promise(r => setTimeout(r, 700))]); } catch (e) { }
   PROFILES.active = id; writeProfiles(); location.reload();
 }
-function profCard() {
+function profCard(inner) {
   const cur = PROFILES.active;
-  return `<div class="card col"><div class="row sp"><h2 class="h2">People on this phone</h2><button class="mini pri" data-a="profAdd">＋ Add</button></div>
+  return `${inner ? '' : '<div class="card col">'}<div class="row sp">${inner ? '<b>People on this phone</b>' : '<h2 class="h2">People on this phone</h2>'}<button class="mini pri" data-a="profAdd">＋ Add</button></div>
     <p class="mut sm">Each person gets their own workouts, history, photos and settings. Switching reloads the app.</p>
-    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">✕</button>` : ''}</div>`).join('')}</div>`;
+    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">✕</button>` : ''}</div>`).join('')}${inner ? '' : '</div>'}`;
 }
 A.profSwitch = el => { if (el.dataset.id !== PROFILES.active) switchProfile(el.dataset.id); };
 A.profMenu = () => openSheet('Switch person', `<div class="col">${PROFILES.list.map(p => `<button class="prow" data-a="profSwitch" data-id="${esc(p.id)}"><b>${esc(p.name)}</b>${p.id === PROFILES.active ? '<span class="tag gr">Active</span>' : ''}</button>`).join('')}</div>`);
@@ -2285,6 +2293,212 @@ function whatsNew() {
 }
 A.seenNew = () => { state.seen.v4 = true; state.seen.v8 = true; state.seen.tips = true; scheduleSave(); renderWorkout(); };
 
+/* ---------- v10: plan → start → pause → end, with a calorie estimate and achievements ---------- */
+const planOpen = new Set();
+const fmtClock = ms => { const t = Math.floor(Math.max(0, ms) / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0'); };
+const planCollapse = i => sessActive() ? '' : `<button class="ib" data-a="planExp" data-i="${i}" aria-label="Collapse exercise">▲</button>`;
+
+/* ----- plan screen ----- */
+function setsSummary(it) {
+  if (it.cardio) return `${+it.min || 0} min${+it.dist ? ' · ' + it.dist + ' ' + (unit() === 'kg' ? 'km' : 'mi') : ''}`;
+  const ws = it.sets.filter(s => s.type !== 'warmup'), wm = it.sets.length - ws.length;
+  if (!ws.length) return wm ? `${wm} warm-up` : 'No sets';
+  const same = ws.every(s => +s.weight === +ws[0].weight && +s.reps === +ws[0].reps);
+  const base = same ? `${ws.length} × ${ws[0].reps}${+ws[0].weight ? ' @ ' + ws[0].weight + ' ' + unit() : ''}` : ws.slice(0, 4).map(s => `${+s.weight || 'BW'}×${s.reps}`).join(' · ') + (ws.length > 4 ? ' …' : '');
+  return base + (wm ? ` · +${wm} warm-up` : '');
+}
+function planSummary() {
+  const its = wk().items; if (!its.length) return '<b class="or">—</b><div class="mut xs">Planned</div>';
+  let sets = 0, cm = 0; its.forEach(it => { if (it.cardio) cm += +it.min || 0; else sets += it.sets.length; });
+  const min = Math.max(5, Math.round((sets * 2.5 + cm) / 5) * 5);
+  return `<b class="or">~${min} min</b><div class="mut xs">${its.length} exercise${its.length === 1 ? '' : 's'}</div>`;
+}
+function planRowHtml(i) {
+  const it = wk().items[i], ex = exById(it.exId); if (!ex) return '';
+  const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
+  const pct = it.cardio ? 0 : rec(ex.primary), bc = pct >= 80 ? 'gr' : pct >= 55 ? 'am' : 'rd';
+  const tag = it.cardio ? '<span class="tag">Cardio</span>' : `<span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span>`;
+  return `<article class="card ex plan" data-ex="${i}"><div class="row gap6 top">
+    <button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+    <button class="planmain grow" data-a="planExp" data-i="${i}" aria-label="Edit sets for ${esc(ex.name)}"><div class="row gap6 wrap">${tag}${it.cardio ? '' : stalledTag(ex)}${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut xs">${esc(setsSummary(it))} · tap to edit sets</div>${it.cardio ? '' : noteLine(ex.id)}</button>
+    <div class="row gap6">${it.cardio ? '' : `<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button>`}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div></article>`;
+}
+A.planExp = el => {
+  const i = +el.dataset.i, it = wk().items[i]; if (!it) return; const k = it.id || i;
+  if (planOpen.has(k)) planOpen.delete(k); else planOpen.add(k);
+  refreshCard(i);
+};
+
+/* ----- live session ----- */
+function ensureStarted() {
+  const w = wk();
+  if (!w.startedAt) { w.startedAt = Date.now(); w.pausedAt = null; w.pausedMs = 0; LiveActivity.sync(); }
+  else if (w.pausedAt) resumeCore();
+}
+function resumeCore() {
+  const w = wk(); if (!w.pausedAt) return;
+  w.pausedMs = (w.pausedMs || 0) + (Date.now() - w.pausedAt); w.pausedAt = null;
+  if (w.pausedRest > 0) startTimer(w.pausedRest, w.pausedLabel || 'Rest');
+  delete w.pausedRest; delete w.pausedLabel; LiveActivity.sync();
+}
+function sessHeader() {
+  const w = wk(), paused = sessPaused();
+  const hard = doneSetCount();
+  return `<div class="card sess ${paused ? 'paused' : ''}">
+    <div class="row sp top"><div class="grow"><span class="lbl ${paused ? '' : 'live'}">${paused ? '⏸ Paused' : '● In progress'}</span><h2 class="h2">${esc(w.name)}</h2></div>
+      <div class="right"><b class="sess-time" id="sess-time">${fmtClock(sessMs())}</b><div class="mut xs">Active time</div></div></div>
+    ${w.note ? `<p class="mut sm">${esc(w.note)}</p>` : ''}
+    <div class="row sp pt8"><span class="mut sm"><b id="sdone" class="or">${hard}</b> sets logged</span><span class="mut sm"><b class="or" id="svol">${sessionVolume().toLocaleString()} ${unit()}</b> volume</span></div>
+    <div class="grid3 pt8">
+      ${paused ? '<button class="btn ok" data-a="resumeWorkout">▶ Resume</button>' : '<button class="btn sec" data-a="pauseWorkout">⏸ Pause</button>'}
+      <button class="btn sec" data-a="editWorkout">✎ Edit</button>
+      <button class="btn danger" data-a="endWorkout">■ End</button></div>
+    ${paused ? '<p class="mut xs pt8">Your timer is stopped. Logging a set resumes it automatically.</p>' : ''}</div>`;
+}
+function paintSessStats() {
+  const v = $('#svol'); if (v) v.textContent = sessionVolume().toLocaleString() + ' ' + unit();
+  const d = $('#sdone'); if (d) d.textContent = doneSetCount();
+}
+function tickSess() {
+  try {
+    if (!state || !sessActive()) return;
+    paintClock(); const e = $('#sess-time'); if (e && !sessPaused()) e.textContent = fmtClock(sessMs());
+  } catch (e) { }
+}
+setInterval(() => { if (!document.hidden) tickSess(); }, 1000);
+
+A.startWorkout = () => {
+  const w = wk(); if (!w.items.length) { toast('Add an exercise first'); return; }
+  audio(); w.startedAt = Date.now(); w.pausedAt = null; w.pausedMs = 0; delete w.pausedRest; delete w.pausedLabel; planOpen.clear();
+  LiveActivity.sync(); cue('set'); buzz('set'); scheduleSave(); renderWorkout(); window.scrollTo(0, 0);
+  toast('Workout started. Have a great session 💪', 2200);
+};
+A.pauseWorkout = () => {
+  const w = wk(); if (!w.startedAt || w.pausedAt) return;
+  w.pausedAt = Date.now();
+  if (state.timer) { w.pausedRest = timerLeft(); w.pausedLabel = state.timer.label; stopRestTimerQuiet(); }
+  LiveActivity.sync(); scheduleSave(); renderWorkout();
+};
+A.resumeWorkout = () => { resumeCore(); scheduleSave(); renderWorkout(); toast('Workout resumed', 1500); };
+
+/* edit the plan without leaving the session */
+A.editWorkout = () => {
+  const splits = [['auto', 'Smart'], ['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['upper', 'Upper'], ['lower', 'Lower'], ['full', 'Full']];
+  const b = (x, l, c = 'sec') => `<button class="btn ${c}" data-a="editDo" data-x="${x}">${l}</button>`;
+  openSheet('Edit workout', `<div class="col"><p class="mut sm">Your timer keeps running. Reorder with the ⠿ handle, swap with ⇄, or remove an exercise from its ⋯ menu.</p>
+    <div class="grid2">${b('addEx', '＋ Add exercise')}${b('addCardio', '🏃 Add cardio')}</div>
+    <div class="field"><label>Switch training split (replaces unfinished exercises)</label><div class="chips scrollx">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="editDo" data-x="split" data-v="${k}">${l}</button>`).join('')}</div></div>
+    <div class="grid2">${b('regen', '⚡ Regenerate', 'pri')}${b('autoSuper', '🔗 Auto-pair supersets', 'vio')}</div>
+    <div class="grid2">${b('nl', '💬 Quick log')}${b('tplOpen', '📋 Templates')}</div>
+    <div class="grid2">${b('repeatLast', '↻ Repeat last workout')}${b('planOpen', '📅 Plan')}</div></div>`);
+};
+A.editDo = el => { closeSheet(); const f = A[el.dataset.x]; if (f) f(el); };
+
+/* ending */
+const fmtDur = ms => { const m = Math.max(1, Math.round(ms / 6e4)); return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + ' min'; };
+A.endWorkout = () => {
+  const n = doneSetCount();
+  openSheet('End workout?', n ? `<div class="col"><p class="mut">You have logged <b>${n}</b> set${n === 1 ? '' : 's'} in <b>${fmtDur(sessMs())}</b>. Save it to your history?</p>
+      <button class="btn ok full big" data-a="finish">✓ Finish &amp; save</button>
+      <button class="btn danger full" data-a="discardWorkout">Discard this workout</button>
+      <button class="btn sec full" data-a="closeSheet">Keep going</button></div>`
+    : `<div class="col"><p class="mut">Nothing is logged yet, so there is nothing to save. Ending now takes you back to your plan.</p>
+      <button class="btn danger full" data-a="discardWorkout">End workout</button>
+      <button class="btn sec full" data-a="closeSheet">Keep going</button></div>`);
+};
+A.discardWorkout = () => {
+  undoAllDone(); clearSession(wk()); planOpen.clear(); stopRestTimerQuiet(); LiveActivity.end();
+  scheduleSave(); closeSheet(); go('workout'); toast('Workout ended. Your plan is ready when you are.', 2600);
+};
+
+/* ----- calories (a rough estimate: MET × body weight × time) ----- */
+const CARDIO_MET = { cardio_run: 8.5, cardio_walk: 3.8, cardio_bike: 6.8, cardio_row: 7, cardio_rope: 10, cardio_stairs: 8.5, cardio_elliptical: 5, cardio_swim: 7, cardio_hiit: 8 };
+function estKcal({ min, workSets, cardio }) {
+  const kg = unit() === 'kg' ? bw() : bw() * KG;
+  const cm = cardio.reduce((a, c) => a + (+c.min || 0), 0);
+  let sm = Math.max(0, (min || 0) - cm);
+  if (sm < workSets * 1.2) sm = workSets * 2.5;                 // sets were tapped in quickly or logged after the fact
+  const pace = sm > 0 ? workSets / (sm / 10) : 0;                // working sets per 10 minutes
+  const met = clamp(2.8 + pace * 0.9, 3, 6);
+  let k = met * kg * (sm / 60);
+  cardio.forEach(c => { k += (CARDIO_MET[c.exId] || 6) * kg * ((+c.min || 0) / 60); });
+  return clamp(Math.round(k / 5) * 5, 0, 2500);
+}
+
+/* ----- achievements ----- */
+function sessAchievements(rec, prior, prs, stBefore) {
+  const out = [], u = rec.unit, n = prior.length + 1;
+  prs.filter(p => p.prev).forEach(p => out.push({ ic: '🏆', t: `New PR: ${p.name}`, d: `${p.w} ${u} × ${p.r} · est. 1RM ${p.prev} → ${p.now} ${u}` }));
+  prs.filter(p => !p.prev).slice(0, 3).forEach(p => out.push({ ic: '🆕', t: `First record: ${p.name}`, d: `${p.w ? p.w + ' ' + u + ' × ' : ''}${p.r} is your starting mark. Beat it next time.` }));
+  const same = prior.filter(h => h.unit === u && h.vol > 0 && !h.deload);
+  if (same.length >= 3 && rec.vol > 0 && !rec.deload) {
+    const best = Math.max(...same.map(h => h.vol));
+    if (rec.vol > best) out.push({ ic: '📈', t: 'Biggest session ever by volume', d: `${rec.vol.toLocaleString()} ${u} vs your previous best of ${best.toLocaleString()}` });
+  }
+  const before = same.reduce((a, h) => a + h.vol, 0), after = before + rec.vol;
+  const crossed = [1e4, 2.5e4, 5e4, 1e5, 2.5e5, 5e5, 1e6, 2.5e6, 5e6, 1e7].filter(x => before < x && after >= x).pop();
+  if (crossed) out.push({ ic: '🏋️', t: `${crossed.toLocaleString()} ${u} lifted all-time`, d: `Lifetime total is now ${after.toLocaleString()} ${u}` });
+  if (n === 1) out.push({ ic: '🎉', t: 'Your first workout is in the books', d: 'Every streak starts with one.' });
+  else if ([5, 10, 25, 50, 75, 100, 150, 200, 250, 300, 350].includes(n) && prior.length < 400) out.push({ ic: '🎯', t: `Workout #${n}`, d: 'Consistency is the whole game.' });
+  const st = streakInfo();
+  if (stBefore.curN < st.goal && st.curN >= st.goal) out.push({ ic: '✅', t: 'Weekly goal hit', d: `${st.curN} of ${st.goal} sessions this week${st.streak >= 2 ? ` · ${st.streak}-week streak 🔥` : ''}` });
+  (rec.cardio || []).forEach(c => {
+    const prev = Math.max(0, ...prior.flatMap(h => (h.cardio || []).filter(x => x.exId === c.exId).map(x => +x.min || 0)));
+    if (prev > 0 && c.min > prev) out.push({ ic: '🏃', t: `Longest ${c.name.split(' (')[0]} yet`, d: `${c.min} min vs your previous best of ${prev} min` });
+  });
+  return out.slice(0, 8);
+}
+
+/* ----- finishing: save, then the summary ----- */
+A.finish = () => {
+  const w = wk(), now = Date.now();
+  if (!doneSetCount()) { toast('Log at least one set or cardio first'); return; }
+  cue('finish'); buzz('finish');
+  const items = [], cardio = [], prMap = new Map(); let sets = 0, vol = 0;
+  const prior = state.history.slice(), stBefore = streakInfo();
+  w.items.forEach(it => {
+    const ex = exById(it.exId); if (!ex) return;
+    if (it.cardio) { if (it.done) cardio.push({ exId: ex.id, name: ex.name, min: +it.min || 0, dist: +it.dist || 0 }); return; }
+    const done = it.sets.filter(s => s.done); if (!done.length) return;
+    done.forEach(s => {
+      if (s.type !== 'warmup') { sets++; vol += setVol(ex, s); }
+      if (s.pr) { const e = Math.round(est1(ex, s)), cur = prMap.get(ex.id); if (!cur || e > cur.now) prMap.set(ex.id, { name: ex.name, w: loadOf(ex, s), r: +s.reps || 0, now: e, prev: s.prevPR ? s.prevPR.e1rm : null }); }
+    });
+    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], sets: done.map(s => ({ w: +s.weight || 0, r: +s.reps || 0, rir: +s.rir || 0, fail: !!s.fail, type: s.type || 'work', pct: s.pct ?? null })) });
+    if (!ex.noE1) { const best = Math.max(0, ...done.filter(s => s.type === 'work').map(s => est1(ex, s))); if (best > 0) { (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []).push({ t: now, v: Math.round(best) }); if (state.e1rmHist[ex.id].length > 400) state.e1rmHist[ex.id].shift(); } }
+  });
+  const dur = w.startedAt ? Math.max(1, Math.round(sessMs(now) / 6e4)) : 0;
+  const kcal = estKcal({ min: dur, workSets: sets, cardio });
+  const rec = { id: uid(), t: now, name: w.name, split: w.split || '', sets, vol: Math.round(vol), dur, unit: unit(), prs: prMap.size, kcal, items, cardio };
+  if (isDeload()) rec.deload = true;
+  state.history.unshift(rec); state.history = state.history.slice(0, 400);
+  const ach = sessAchievements(rec, prior, [...prMap.values()], stBefore);
+  rec.ach = ach.map(a => a.ic + ' ' + a.t);
+  HealthBridge.writeWorkout({ start: w.startedAt || now, end: now, name: w.name, calories: kcal });
+  LiveActivity.end(); stopRestTimerQuiet();
+  window.__lastSession = { rec, ach, tpl: w.items.filter(it => !it.cardio).map(it => ({ exId: it.exId, superset: it.superset, sets: it.sets.filter(s => s.type !== 'warmup').map(s => ({ w: +s.weight, r: +s.reps })) })) };
+  clearSession(wk()); planOpen.clear();
+  scheduleSave(); flushSave(); generateWorkout(true);
+  const tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+  openSheet('Workout complete 💪', `<div class="col"><div class="tiles">${tile(rec.dur ? rec.dur + 'm' : '—', 'Active time')}${tile('≈ ' + kcal.toLocaleString(), 'kcal burned')}${tile(sets, 'Hard sets')}${tile(rec.vol.toLocaleString(), unit() + ' volume')}${tile(rec.prs, 'PRs')}</div>
+    <p class="mut xs center">Calories are a rough estimate from your body weight, active time and effort (pauses are not counted). Real burn can differ by about 25%.</p>
+    ${ach.length ? `<h4 class="subh">Achievements</h4>${ach.map(a => `<div class="ach"><span class="aic">${a.ic}</span><div class="grow"><b>${esc(a.t)}</b><div class="mut xs">${esc(a.d)}</div></div></div>`).join('')}` : '<p class="mut sm center">No records this time. Showing up and logging the work is what builds them. 👏</p>'}
+    ${streakLine()}
+    <h4 class="subh">What you did</h4>
+    ${items.map(i => `<div class="prow static"><b>${esc(i.name)}</b><span class="mut xs">${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(' · ')}</span></div>`).join('')}
+    ${cardio.map(c => `<div class="prow static"><b>${esc(c.name)}</b><span class="mut xs">${c.min} min${c.dist ? ' · ' + c.dist : ''}</span></div>`).join('')}
+    <div class="grid2"><button class="btn sec" data-a="sessTpl">Save as routine</button><button class="btn sec" data-a="sessShare">Share summary</button></div>
+    <button class="btn pri full" data-a="closeSheet">Done</button></div>`, { onClose: () => go('workout') });
+};
+A.sessShare = () => {
+  const s = window.__lastSession, r = s.rec, lines = [`ForgeFit · ${r.name} · ${fmtDate(r.t)}`, `${r.sets} sets · ${r.vol.toLocaleString()} ${r.unit} volume${r.dur ? ' · ' + r.dur + ' min' : ''}${r.kcal ? ' · ~' + r.kcal + ' kcal' : ''}`];
+  if (s.ach.length) lines.push('', ...s.ach.map(a => `${a.ic} ${a.t}`));
+  lines.push('');
+  r.items.forEach(i => lines.push(`${i.name}: ${i.sets.filter(x => x.type !== 'warmup').map(x => x.w + '×' + x.r).join(', ')}`));
+  r.cardio.forEach(c => lines.push(`${c.name}: ${c.min} min${c.dist ? ', ' + c.dist : ''}`));
+  shareText(lines.join('\n'), 'My workout');
+};
+
 /* =====================================================================
    ForgeFit features: onboarding, quick-log parser, templates, custom
    exercises, analytics, body tracking, settings, backup, boot
@@ -2514,7 +2728,7 @@ function logQLToday(list) {
       const pr = applySetDone(it, s, ex); if (pr) prs.push(pr);
     }
   });
-  if (!wk().startedAt) wk().startedAt = Date.now();
+  ensureStarted();
   return prs;
 }
 function logQLPast(list, t) {      // saved straight to history on the chosen day
@@ -2566,7 +2780,7 @@ A.tplStart = el => {
   const t = state.templates.find(x => x.id === el.dataset.id); if (!t) return;
   if (doneSetCount() && !confirm('Replace your current session?')) return;
   const items = t.items.filter(i => exById(i.exId)).map(i => { const ex = exById(i.exId); return { id: uid(), exId: i.exId, superset: i.superset || null, tempo: ex.tempo, sets: i.sets.map(s => ({ weight: s.w, reps: s.r, rir: 2, fail: false, done: false, type: 'work' })) }; });
-  state.workout = { startedAt: null, name: t.name, split: '', note: 'From your routine', items }; normSS(); scheduleSave(); closeSheet(); go('workout');
+  state.workout = carrySession(wk(), { startedAt: null, name: t.name, split: '', note: 'From your routine', items }); normSS(); scheduleSave(); closeSheet(); go('workout');
 };
 const tplPayload = t => { const ids = new Set(t.items.map(i => i.exId)), custom = state.customExercises.filter(c => ids.has(c.id)); return JSON.stringify({ n: t.name, i: t.items, c: custom }); };
 const b64 = str => btoa(unescape(encodeURIComponent(str)));
@@ -2784,71 +2998,81 @@ async function syncWake() {
   } catch (e) { }
 }
 const tog = (k, l, d) => `<label class="trow"><span><b>${l}</b>${d ? `<em>${d}</em>` : ''}</span><input type="checkbox" class="sw" data-f="setting" data-k="${k}" ${state.settings[k] ? 'checked' : ''}></label>`;
+const moreOpen = new Set(); let moreInit = false;
+const grp = (k, ic, t, sub, body) => { const o = moreOpen.has(k); return `<section class="card grp ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${o ? '▾' : '▸'}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</section>`; };
 function renderMore() {
   const p = state.profile, s = state.settings, G = GOALS[p.goal] || GOALS.muscle, standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  $('#tab-more').innerHTML = `
-    <div class="card"><div class="row sp"><div><h2 class="h2">Your profile</h2><p class="mut sm">${G.label} · ${esc(p.experience)} · ${p.days} days/wk · ${p.sessionMin} min</p><p class="mut xs">${p.age} yrs · ${p.weight} ${p.unit}${p.cardio ? ' · cardio finisher' : ''}</p></div><button class="mini pri" data-a="obOpen">Edit</button></div></div>
-
-    <div class="card col"><h2 class="h2">Settings</h2>
-      <div class="field"><label>Appearance</label><div class="chips">${[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Match phone']].map(([k, l]) => `<button class="chip ${(s.theme || 'dark') === k ? 'on' : ''}" data-a="themeSet" data-v="${k}">${l}</button>`).join('')}</div></div>
+  if (!moreInit) { moreInit = true; if (backupDue() || !state.lastExport) moreOpen.add('data'); }
+  const sets = {
+    display: `<div class="field"><label>Appearance</label><div class="chips">${[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Match phone']].map(([k, l]) => `<button class="chip ${(s.theme || 'dark') === k ? 'on' : ''}" data-a="themeSet" data-v="${k}">${l}</button>`).join('')}</div></div>
       <div class="field"><label>Units</label><div class="chips"><button class="chip ${p.unit === 'lb' ? 'on' : ''}" data-a="unitSet" data-v="lb">lb</button><button class="chip ${p.unit === 'kg' ? 'on' : ''}" data-a="unitSet" data-v="kg">kg</button></div></div>
-      ${tog('rpe', 'Show RPE instead of RIR', 'RPE 8 = 2 reps in reserve')}
+      <div class="field"><label>Week starts on</label><select data-f="setting" data-k="weekStart"><option value="1" ${s.weekStart !== 0 ? 'selected' : ''}>Monday</option><option value="0" ${s.weekStart === 0 ? 'selected' : ''}>Sunday</option></select></div>`,
+    training: `${tog('rpe', 'Show RPE instead of RIR', 'RPE 8 = 2 reps in reserve')}
       ${tog('warmups', 'Warm-up set suggestions')}
       ${tog('prefill', 'Pre-fill sets from last session', 'Starts each set at the weight and reps you logged last time')}
-      <div class="field"><label>Week starts on</label><select data-f="setting" data-k="weekStart"><option value="1" ${s.weekStart !== 0 ? 'selected' : ''}>Monday</option><option value="0" ${s.weekStart === 0 ? 'selected' : ''}>Sunday</option></select></div>
-      <div class="sep"></div>
-      ${tog('sound', 'Sound cues', 'Set complete, tempo phases, timer end')}
-      <div class="grid2"><div class="field"><label>Tone</label><select data-f="setting" data-k="tone">${['beep', 'chime', 'tick'].map(t => `<option ${s.tone === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>Volume</label><input type="range" min="0" max="100" value="${Math.round(s.volume * 100)}" data-f="setting" data-k="volume"></div></div>
-      ${tog('haptics', 'Haptic feedback', navigator.vibrate ? 'Vibration on set and timer events' : 'Not supported by this browser (iOS Safari). Works in Android and native apps.')}
-      <div class="grid2"><div class="field"><label>Strength</label><select data-f="setting" data-k="haptic">${['light', 'medium', 'strong'].map(t => `<option ${s.haptic === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>&nbsp;</label><button class="btn sec" data-a="testFx">Test cues</button></div></div>
       <div class="sep"></div>
       <div class="grid2"><div class="field"><label>Rest: compound (s)</label><input inputmode="numeric" value="${s.restC ?? ''}" placeholder="auto ${G.restC}" data-f="setting" data-k="restC"></div><div class="field"><label>Rest: isolation (s)</label><input inputmode="numeric" value="${s.restI ?? ''}" placeholder="auto ${G.restI}" data-f="setting" data-k="restI"></div></div>
-      <div class="field"><label>Available plates per side (${p.unit})</label><input value="${s.plates.join(', ')}" data-f="platesCsv"></div>
+      <div class="field"><label>Available plates per side (${p.unit})</label><input value="${s.plates.join(', ')}" data-f="platesCsv"></div>`,
+    sound: `${tog('sound', 'Sound cues', 'Set complete, tempo phases, timer end')}
+      <div class="grid2"><div class="field"><label>Tone</label><select data-f="setting" data-k="tone">${['beep', 'chime', 'tick'].map(t => `<option ${s.tone === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>Volume</label><input type="range" min="0" max="100" value="${Math.round(s.volume * 100)}" data-f="setting" data-k="volume"></div></div>
       <div class="sep"></div>
-      ${tog('notify', 'Rest-timer notifications', 'Alert when the timer ends while the app is in the background')}
-      ${tog('wake', 'Keep screen awake', 'Uses more battery. Off by default.')}
-    </div>
-
-    <div class="card col"><h2 class="h2">Equipment</h2>
-      <div class="chips scrollx">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => `<button class="chip ${state.activeProfile === n ? 'on' : ''}" data-a="gearPreset" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+      ${tog('haptics', 'Haptic feedback', navigator.vibrate ? 'Vibration on set and timer events' : 'Not supported by this browser (iOS Safari). Works in Android and native apps.')}
+      <div class="grid2"><div class="field"><label>Strength</label><select data-f="setting" data-k="haptic">${['light', 'medium', 'strong'].map(t => `<option ${s.haptic === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field"><label>&nbsp;</label><button class="btn sec" data-a="testFx">Test cues</button></div></div>`,
+    timers: `${tog('notify', 'Rest-timer notifications', 'Alert when the timer ends while the app is in the background')}
+      ${tog('wake', 'Keep screen awake', 'Uses more battery. Off by default.')}`,
+    gear: `<div class="chips scrollx">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => `<button class="chip ${state.activeProfile === n ? 'on' : ''}" data-a="gearPreset" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
       <div class="gear">${Object.keys(state.gear).map(g => `<button class="${state.gear[g] ? 'on' : ''}" data-a="gearToggle" data-k="${esc(g)}"><span>${esc(gearLabel(g))}</span><b>${state.gear[g] ? '✓' : 'Off'}</b></button>`).join('')}</div>
       <div class="grid2"><button class="btn sec" data-a="gearAdd">＋ Add equipment</button><button class="btn sec" data-a="gearSave">Save as profile</button></div>
-      ${Object.keys(state.gearProfiles).length ? `<div class="mut xs">Saved profiles: ${Object.keys(state.gearProfiles).map(n => `${esc(n)} <button class="link" data-a="gearDelProfile" data-v="${esc(n)}">remove</button>`).join(' · ')}</div>` : ''}</div>
-
-    <div class="card col"><h2 class="h2">Plan &amp; library</h2>
-      <div class="grid2"><button class="btn sec" data-a="planOpen">📅 Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">📖 Exercise library</button></div></div>
-
-    <div class="card col"><div class="row sp"><h2 class="h2">Custom exercises</h2><button class="mini pri" data-a="cxOpen">＋ New</button></div>
-      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">✕</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}</div>
-
-    <div class="card col"><div class="row sp"><h2 class="h2">Routines</h2><button class="mini" data-a="tplOpen">Open</button></div>
-      <p class="mut sm">${state.templates.length} saved. Share is manual and opt-in: you copy a code, no accounts, feeds or leaderboards.</p></div>
-
-    ${profCard()}
-
-    <div class="card col"><h2 class="h2">Integrations</h2>
-      <div class="prow static"><div class="grow"><b>Live Activity / Dynamic Island</b><div class="mut xs">${LiveActivity.available() ? 'Connected: workout and rest timer are pushed to the lock screen.' : 'Needs the native iOS wrapper. Rest-timer and workout state are already exposed to it. In the browser you get the docked timer, notifications and tab title.'}</div></div><span class="tag ${LiveActivity.available() ? 'gr' : ''}">${LiveActivity.available() ? 'On' : 'Native only'}</span></div>
-      <div class="prow static"><div class="grow"><b>Apple Health · Google Fit · Samsung Health</b><div class="mut xs">${HealthBridge.available() ? 'Plugin detected. Completed workouts are written to your health app.' : 'Two-way sync needs HealthKit / Health Connect, which browsers cannot access. The bridge is wired for a Capacitor build.'}</div></div>${HealthBridge.available() ? `<input type="checkbox" class="sw" data-f="setting" data-k="healthSync" ${s.healthSync ? 'checked' : ''}>` : '<span class="tag">Native only</span>'}</div>
-      <div class="prow static"><div class="grow"><b>Apple Watch / Wear OS</b><div class="mut xs">Companion apps are native projects. Today, use the docked timer and haptics on your phone.</div></div><span class="tag">Native only</span></div>
-      ${standalone ? '' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}</div>
-
-    <div class="card col"><h2 class="h2">Data &amp; backup</h2>
-      <div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
+      ${Object.keys(state.gearProfiles).length ? `<div class="mut xs">Saved profiles: ${Object.keys(state.gearProfiles).map(n => `${esc(n)} <button class="link" data-a="gearDelProfile" data-v="${esc(n)}">remove</button>`).join(' · ')}</div>` : ''}`,
+    lib: `<div class="grid2"><button class="btn sec" data-a="planOpen">📅 Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">📖 Exercise library</button></div>
+      <div class="sep"></div>
+      <div class="row sp"><b>Routines</b><button class="mini" data-a="tplOpen">Open</button></div>
+      <p class="mut sm">${state.templates.length} saved. Share is manual and opt-in: you copy a code, no accounts, feeds or leaderboards.</p>
+      <div class="sep"></div>
+      <div class="row sp"><b>Custom exercises</b><button class="mini pri" data-a="cxOpen">＋ New</button></div>
+      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">✕</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}`,
+    people: profCard(true),
+    data: `<div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
       <p class="mut xs">Changes auto-save instantly with a rolling backup copy on this device${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. That protects against crashes, not against losing the phone.</p>
       <div class="grid2"><button class="btn sec" data-a="importJSON">Import backup</button><button class="btn sec" data-a="restoreBak">Restore auto-backup</button></div>
       <button class="btn sec full" data-a="exportCSV">Export CSV (spreadsheet)</button>
-      <button class="btn danger full" data-a="wipe">Erase all data</button></div>
+      <button class="btn danger full" data-a="wipe">Erase all data</button>`,
+    integ: `<div class="prow static"><div class="grow"><b>Live Activity / Dynamic Island</b><div class="mut xs">${LiveActivity.available() ? 'Connected: workout and rest timer are pushed to the lock screen.' : 'Needs the native iOS wrapper. Rest-timer and workout state are already exposed to it. In the browser you get the docked timer, notifications and tab title.'}</div></div><span class="tag ${LiveActivity.available() ? 'gr' : ''}">${LiveActivity.available() ? 'On' : 'Native only'}</span></div>
+      <div class="prow static"><div class="grow"><b>Apple Health · Google Fit · Samsung Health</b><div class="mut xs">${HealthBridge.available() ? 'Plugin detected. Completed workouts are written to your health app.' : 'Two-way sync needs HealthKit / Health Connect, which browsers cannot access. The bridge is wired for a Capacitor build.'}</div></div>${HealthBridge.available() ? `<input type="checkbox" class="sw" data-f="setting" data-k="healthSync" ${s.healthSync ? 'checked' : ''}>` : '<span class="tag">Native only</span>'}</div>
+      <div class="prow static"><div class="grow"><b>Apple Watch / Wear OS</b><div class="mut xs">Companion apps are native projects. Today, use the docked timer and haptics on your phone.</div></div><span class="tag">Native only</span></div>
+      ${standalone ? '' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}`,
+    adv: `<div class="row sp"><div class="grow"><b id="ver-line">ForgeFit v${APP_VER}</b><div class="mut xs">The app looks for updates every time you open it. Your workouts are never touched by an update.</div></div><button class="btn sec" data-a="checkUpdate">Check for updates</button></div>
+      <div class="sep"></div>
+      <b>Baseline e1RM editor</b>
+      <p class="mut xs">Edit starting estimated maxes as JSON (${p.unit}). Keys are exercise ids.</p>
+      <textarea id="json-ta" rows="8" class="mono">${esc(JSON.stringify(state.e1rm, null, 2))}</textarea><button class="btn pri full" data-a="jsonSave">Save baselines</button>`
+  };
+  const allOpen = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'].every(k => moreOpen.has(k));
+  $('#tab-more').innerHTML = `
+    <div class="card"><div class="row sp"><div><h2 class="h2">Your profile</h2><p class="mut sm">${G.label} · ${esc(p.experience)} · ${p.days} days/wk · ${p.sessionMin} min</p><p class="mut xs">${p.age} yrs · ${p.weight} ${p.unit}${p.cardio ? ' · cardio finisher' : ''}</p></div><button class="mini pri" data-a="obOpen">Edit</button></div></div>
+    <div class="row sp px4"><span class="lbl">Settings</span><button class="link" data-a="moreAll">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
 
-    <details class="card"><summary class="h2">Baseline e1RM editor</summary>
-      <p class="mut xs pt8">Edit starting estimated maxes as JSON (${p.unit}). Keys are exercise ids.</p>
-      <textarea id="json-ta" rows="8" class="mono">${esc(JSON.stringify(state.e1rm, null, 2))}</textarea><button class="btn pri full mt8" data-a="jsonSave">Save baselines</button></details>
+    <h3 class="grpt">Preferences</h3>
+    ${grp('display', '🎨', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}
+    ${grp('training', '🏋️', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}
+    ${grp('sound', '🔊', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}
+    ${grp('timers', '⏱', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}
 
-    <div class="card col"><h2 class="h2">App version</h2>
-      <div class="row sp"><div class="grow"><b id="ver-line">ForgeFit v${APP_VER}</b><div class="mut xs">The app looks for updates every time you open it. Your workouts are never touched by an update.</div></div><button class="btn sec" data-a="checkUpdate">Check for updates</button></div></div>
+    <h3 class="grpt">Workout setup</h3>
+    ${grp('gear', '🧰', 'Equipment', 'What you have available', sets.gear)}
+    ${grp('lib', '📚', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}
+    ${grp('people', '👥', 'People', 'Separate history for each person', sets.people)}
+
+    <h3 class="grpt">Data &amp; app</h3>
+    ${grp('data', '💾', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}
+    ${grp('integ', '🔗', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}
+    ${grp('adv', '⚙️', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}
 
     <p class="mut xs center">ForgeFit v${APP_VER} · private-first · no accounts, no tracking, no feeds.</p>`;
 }
+A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
+A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };
 R.more = renderMore;
 A.obOpen = () => openOnboarding(true);
 A.cxOpen = () => openCustom('');

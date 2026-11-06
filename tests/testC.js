@@ -163,13 +163,13 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.evaluate(() => navigator.serviceWorker.ready); await page.reload(); await page.waitForSelector('#nav');
     await page.waitForFunction(() => navigator.serviceWorker.controller);
     const cached = await page.evaluate(async () => { const ks = await caches.keys(); const c = await caches.open(ks[0]); const reqs = (await c.keys()).map(r => new URL(r.url).pathname); return { ks, reqs }; });
-    H.check('service worker cache v9 holds the app shell + icons', cached.ks.includes('forgefit-v9') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
+    H.check('service worker cache v10 holds the app shell + icons', cached.ks.includes('forgefit-v10') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
     await ctx.setOffline(true); await page.reload(); await page.waitForSelector('#nav');
     H.check('app opens fully offline', await page.locator('#exlist .ex').count() >= 1);
     await page.click('#nav-progress'); await page.click('#nav-more'); H.check('tabs work offline', page.errs.filter(e => !/Failed to load resource|net::ERR/.test(e)).length === 0, page.errs);
     await ctx.setOffline(false);
     // simulate a new release: the next service worker takes over and the app offers a reload
-    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v9", "forgefit-v10"));
+    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v10", "forgefit-v11"));
     await page.evaluate(() => { wk().startedAt = Date.now(); });   // mid-workout: the app must NOT reload itself
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
     await page.waitForSelector('#toast.show.act', { timeout: 8000 });

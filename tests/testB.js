@@ -90,7 +90,7 @@ async function mouseSwipe(page, sel, dx, dy = 0, steps = 12) {
     H.check('trim chip disappears after use', await page.locator('.coach.dn').count() === 0);
 
     console.log('== T8 backup, reminder, share, import');
-    await page.evaluate(() => { state.muscles.Chest.recovery = 100; state.createdAt = Date.now() - 20 * 864e5; state.lastExport = 0; state.backupSnooze = 0; renderWorkout(); });
+    await page.evaluate(() => { state.muscles.Chest.recovery = 100; state.createdAt = Date.now() - 20 * 864e5; state.lastExport = 0; state.backupSnooze = 0; clearSession(state.workout); renderWorkout(); });
     H.check('reminder banner appears after 2 weeks without a backup', await page.locator('.banner:has-text("Time for a backup")').count() === 1);
     await page.click('[data-a=backupLater]'); H.check('"Later" hides the reminder', await page.locator('.banner:has-text("Time for a backup")').count() === 0);
     await page.evaluate(() => { state.backupSnooze = 0; renderWorkout(); });

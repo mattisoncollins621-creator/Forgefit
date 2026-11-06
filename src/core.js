@@ -8,6 +8,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KG = 0.45359237;
+/* ---------- live session (started / paused) ---------- */
+const SESSK = ['startedAt', 'pausedAt', 'pausedMs', 'pausedRest', 'pausedLabel'];
+const carrySession = (from, to) => { SESSK.forEach(k => { if (from && from[k]) to[k] = from[k]; }); return to; };
+const sessActive = () => !!state.workout.startedAt;
+const sessPaused = () => !!(state.workout.startedAt && state.workout.pausedAt);
+const sessMs = (now = Date.now()) => { const w = state.workout; return w.startedAt ? Math.max(0, (w.pausedAt || now) - w.startedAt - (w.pausedMs || 0)) : 0; };
+const clearSession = w => { SESSK.forEach(k => { delete w[k]; }); w.startedAt = null; w.pausedAt = null; w.pausedMs = 0; return w; };
 const DAY = 864e5;
 const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 'short', day: 'numeric' });
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -243,7 +250,7 @@ function defaultState() {
     settings: { rpe: false, sound: true, volume: .6, tone: 'beep', haptics: true, haptic: 'medium', restC: null, restI: null, notify: false, wake: false, bar: 45, plates: [45, 35, 25, 10, 5, 2.5], warmups: true, healthSync: false, prefill: true, theme: 'dark', weekStart: 1 },
     muscles, gear: { ...GEAR_DEFAULT }, gearProfiles: {}, activeProfile: 'Home Gym',
     e1rm: {}, e1rmHist: {}, prs: {}, split: 'auto',
-    workout: { startedAt: null, name: "Today's Session", note: '', items: [] },
+    workout: { startedAt: null, pausedAt: null, pausedMs: 0, name: "Today's Session", note: '', items: [] },
     customExercises: [], history: [], templates: [], measures: [], photos: [],
     timer: null, deload: null, lastDeload: 0, lastTick: Date.now(), lastBackup: 0,
     createdAt: Date.now(), lastExport: 0, backupSnooze: 0, nudgeSnooze: 0, block: null, seen: {}, favs: [], exNotes: {}

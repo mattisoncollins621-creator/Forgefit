@@ -16,7 +16,7 @@ head='''<!DOCTYPE html>
 '''
 css=open('src/style.css').read(); body=open('src/body.html').read()
 js=''
-for i,f in enumerate(['core.js','ui.js','extras.js','more.js','features.js']):
+for i,f in enumerate(['core.js','ui.js','extras.js','more.js','session.js','features.js']):
     s=open('src/'+f).read()
     if i: s=s.replace("'use strict';\n",'',1)
     js+=s+'\n'
