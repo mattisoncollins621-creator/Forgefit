@@ -46,7 +46,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     H.check('paused: time is frozen', p.paused && p.a === p.b, p);
     H.check('paused: rest timer is parked, not lost', !p.timer && p.rest > 0, p);
     H.check('paused: shows Paused label and Resume button', /paused/i.test(await page.locator('.card.sess').innerText()) && await page.locator('[data-a=resumeWorkout]').count() === 1 && await page.locator('[data-a=pauseWorkout]').count() === 0);
-    H.check('paused: header clock shows pause icon', /⏸/.test(await page.locator('#clock').innerText()));
+    H.check('paused: header clock shows pause icon', await page.locator('#clock svg').count() === 1 && !/[^\x00-\x7f]/.test(await page.locator('#clock').innerText()));
     await shot(page, 'paused');
     await page.waitForTimeout(1500);
     await page.click('[data-a=resumeWorkout]');

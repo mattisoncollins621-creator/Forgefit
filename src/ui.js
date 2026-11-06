@@ -162,38 +162,38 @@ function cardHtml(i) {
   const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
   if (it.cardio) {
     return `<article class="card ex" data-ex="${i}"><div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6"><span class="tag">Cardio</span>${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut sm">${esc(ex.cue || '')}</div></div>
-      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div>
       <div class="grid2 pt8"><div class="field"><label>Minutes</label><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}"></div>
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
-      <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? '✓ Completed' : 'Mark complete'}</button></article>`;
+      <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? ic('check') + ' Completed' : 'Mark complete'}</button></article>`;
   }
   const pct = rec(ex.primary), bc = pct >= 80 ? 'gr' : pct >= 55 ? 'am' : 'rd', last = lastPerf(ex.id);
   let wn = 0;
   const rows = it.sets.map((s, j) => {
     const lbl = s.type === 'warmup' ? 'W' : s.type === 'drop' ? 'D' : ++wn;
     const ph = last && last[Math.min(j, last.length - 1)];
-    return `<div class="swrap"><div class="swbg"><span>⧉ Duplicate</span><span>Delete ✕</span></div><div class="srow ${s.done ? 'done' : ''} ${s.type}">
+    return `<div class="swrap"><div class="swbg"><span>${ic('plus')} Duplicate</span><span>Delete ${ic('close')}</span></div><div class="srow ${s.done ? 'done' : ''} ${s.type}">
       <button class="snum t-${s.type}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Set options">${lbl}</button>
       <input inputmode="decimal" value="${s.weight}" placeholder="${ph ? ph.w : ''}" data-f="set" data-k="weight" data-i="${i}" data-j="${j}" aria-label="Weight">
       <input inputmode="numeric" value="${s.reps}" placeholder="${ph ? ph.r : ''}" data-f="set" data-k="reps" data-i="${i}" data-j="${j}" aria-label="Reps">
       <select data-f="set" data-k="rir" data-i="${i}" data-j="${j}" aria-label="Effort">${rirOpts(s.fail ? 'F' : s.rir)}</select>
-      <button class="chk ${s.done ? 'on' : ''}" data-a="toggleSet" data-i="${i}" data-j="${j}" aria-label="Log set">${s.done ? '✓' : ''}</button></div></div>`;
+      <button class="chk ${s.done ? 'on' : ''}" data-a="toggleSet" data-i="${i}" data-j="${j}" aria-label="Log set">${s.done ? ic('check') : ''}</button></div></div>`;
   }).join('');
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
-  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}"><b>↑</b> ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}"><b>↓</b> ${esc(fat.msg)}</button>` : '';
+  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
   const canWarm = state.settings.warmups && ex.type === 'compound' && !ex.noE1 && !ex.bw && !it.sets.some(s => s.type === 'warmup');
   return `<article class="card ex" data-ex="${i}">
     <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${ss}</div>
       <h3 class="exn">${esc(ex.name)}</h3>${last ? `<div class="mut xs">Last: ${last.slice(0, 4).map(s => `${s.w}×${s.r}`).join(' · ')}</div>` : ''}${noteLine(ex.id)}</div>
-      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">⇄</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">⋯</button></div></div>
+      <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">${ic('swap')}</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div>
     ${coach}
     <div class="shead"><span>Set</span><span>${unit()}</span><span>Reps</span><span>${state.settings.rpe ? 'RPE' : 'RIR'}</span><span></span></div>
     <div class="sets">${rows}</div>
     <div class="row gap6 wrap pt8">
-      <button class="mini" data-a="addSet" data-i="${i}">＋ Set</button><button class="mini" data-a="addDrop" data-i="${i}">↘ Drop set</button>
-      ${canWarm ? `<button class="mini" data-a="warmup" data-i="${i}">🔥 Warm-up</button>` : ''}
-      <button class="mini" data-a="tempo" data-i="${i}">🎵 Tempo ${esc(it.tempo || ex.tempo)}</button>
-      ${ex.gear.includes('Barbell') ? `<button class="mini" data-a="plates" data-i="${i}">⚖ Plates</button>` : ''}</div>
+      <button class="mini" data-a="addSet" data-i="${i}">${ic('plus')} Set</button><button class="mini" data-a="addDrop" data-i="${i}">${ic('drop')} Drop set</button>
+      ${canWarm ? `<button class="mini" data-a="warmup" data-i="${i}">${ic('flame')} Warm-up</button>` : ''}
+      <button class="mini" data-a="tempo" data-i="${i}">${ic('music')} Tempo ${esc(it.tempo || ex.tempo)}</button>
+      ${ex.gear.includes('Barbell') ? `<button class="mini" data-a="plates" data-i="${i}">${ic('plates')} Plates</button>` : ''}</div>
     <details class="cue"><summary>Form cue</summary><p>${esc(ex.cue || 'Control the weight, full range of motion.')}</p></details></article>`;
 }
 function coachBanner() {
@@ -209,23 +209,22 @@ function renderWorkout() {
   const splits = [['auto', 'Smart'], ['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs'], ['upper', 'Upper'], ['lower', 'Lower'], ['full', 'Full']];
   const sp = resolveSplit(), live = sessActive();
   const list = `<div id="exlist" class="col${sessPaused() ? ' dimmed' : ''}">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
-    <div class="row gap6"><button class="btn sec grow" data-a="addEx">＋ Add exercise</button><button class="btn sec grow" data-a="addCardio">🏃 Add cardio</button></div>`;
+    <div class="row gap6"><button class="btn sec grow" data-a="addEx">${ic('plus')} Add exercise</button><button class="btn sec grow" data-a="addCardio">${ic('activity')} Add cardio</button></div>`;
   if (live) {
     tabEl.innerHTML = `${sessHeader()}${list}
-    <button class="btn danger full big" data-a="endWorkout">■ End workout</button>`;
+    <button class="btn danger full big" data-a="endWorkout">${ic('stop')} End workout</button>`;
   } else {
     tabEl.innerHTML = `
     ${topBanners()}
     ${weekCard()}
-    <div class="card"><div class="row sp"><span class="lbl">Training split</span><span class="tag gr">${state.split === 'auto' ? 'Smart: ' + esc(SPLIT_NAME[sp] || '') : esc(SPLIT_NAME[state.split])}</span></div>
+    <div class="card plancard"><div class="row sp"><span class="lbl">Training split</span><span class="tag">${state.split === 'auto' ? 'Smart: ' + esc(SPLIT_NAME[sp] || '') : esc(SPLIT_NAME[state.split])}</span></div>
       <div class="chips scrollx">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="split" data-v="${k}">${l}</button>`).join('')}</div>
-      <div class="row gap6 pt8"><button class="btn vio grow" data-a="autoSuper">🔗 Auto-pair supersets</button><button class="btn pri grow" data-a="regen">⚡ Regenerate</button></div>
-      <div class="row gap6 pt8"><button class="btn sec grow" data-a="nl">💬 Quick log</button><button class="btn sec grow" data-a="tplOpen">📋 Templates</button></div>
-      <div class="row gap6 pt8"><button class="btn sec grow" data-a="repeatLast">↻ Repeat last workout</button><button class="btn sec grow" data-a="planOpen">📅 Plan</button></div></div>
+      <div class="grid2 pt8"><button class="btn sec" data-a="autoSuper">${ic('link')} Pair supersets</button><button class="btn sec" data-a="regen">${ic('zap')} Regenerate</button></div>
+      <div class="qgrid mt8"><button data-a="nl">${ic('message')}<span>Quick log</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="repeatLast">${ic('repeat')}<span>Repeat last</span></button><button data-a="planOpen">${ic('calendar')}<span>Plan</span></button></div></div>
     <div class="row sp px4"><div><h2 class="h2">${esc(w.name)}</h2><p class="mut sm">${esc(w.note || '')}</p></div><div class="right">${planSummary()}</div></div>
-    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}
+    ${w.items.length ? `<button class="btn pri hero full" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}
     ${list}
-    ${w.items.length ? '<button class="btn ok full big" data-a="startWorkout">▶ Start workout</button>' : ''}`;
+    ${w.items.length ? `<button class="btn pri hero full" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}`;
   }
   paintClock(); tickSess();
 }
@@ -240,7 +239,7 @@ function refreshCard(i) {
 }
 function paintClock() {
   const c = $('#clock'); if (!sessActive()) { c.hidden = true; return; }
-  c.hidden = false; c.textContent = (sessPaused() ? '⏸ ' : '⏱ ') + fmtClock(sessMs());
+  c.hidden = false; c.innerHTML = ic(sessPaused() ? 'pause' : 'clock') + ' ' + fmtClock(sessMs());
 }
 
 /* ---------- workout actions ---------- */
@@ -287,9 +286,9 @@ A.setMenu = el => {
   const i = +el.dataset.i, j = +el.dataset.j, s = wk().items[i].sets[j], n = wk().items[i].sets.length;
   const tp = (t, l) => `<button class="chip ${s.type === t ? 'on' : ''}" data-a="setType" data-i="${i}" data-j="${j}" data-v="${t}">${l}</button>`;
   openSheet(`Set ${j + 1}`, `<div class="col"><div class="chips">${tp('work', 'Working')}${tp('warmup', 'Warm-up')}${tp('drop', 'Drop set')}</div>
-    <button class="btn ${s.fail ? 'ok' : 'sec'} full" data-a="setFail" data-i="${i}" data-j="${j}">${s.fail ? '✓ Taken to failure' : 'Mark as failure set'}</button>
-    <div class="grid2"><button class="btn sec" data-a="setMove" data-i="${i}" data-j="${j}" data-d="-1" ${j === 0 ? 'disabled' : ''}>↑ Move up</button><button class="btn sec" data-a="setMove" data-i="${i}" data-j="${j}" data-d="1" ${j === n - 1 ? 'disabled' : ''}>↓ Move down</button></div>
-    <div class="grid2"><button class="btn sec" data-a="setDup" data-i="${i}" data-j="${j}">⧉ Duplicate</button><button class="btn danger" data-a="setDel" data-i="${i}" data-j="${j}">Delete set</button></div></div>`);
+    <button class="btn ${s.fail ? 'ok' : 'sec'} full" data-a="setFail" data-i="${i}" data-j="${j}">${s.fail ? ic('check') + ' Taken to failure' : 'Mark as failure set'}</button>
+    <div class="grid2"><button class="btn sec" data-a="setMove" data-i="${i}" data-j="${j}" data-d="-1" ${j === 0 ? 'disabled' : ''}>${ic('arrow-up')} Move up</button><button class="btn sec" data-a="setMove" data-i="${i}" data-j="${j}" data-d="1" ${j === n - 1 ? 'disabled' : ''}>${ic('arrow-down')} Move down</button></div>
+    <div class="grid2"><button class="btn sec" data-a="setDup" data-i="${i}" data-j="${j}">${ic('plus')} Duplicate</button><button class="btn danger" data-a="setDel" data-i="${i}" data-j="${j}">Delete set</button></div></div>`);
 };
 function undoIfDone(i, j) { const it = wk().items[i], s = it.sets[j]; if (s.done) undoSet(it, s, exById(it.exId)); }
 A.setType = el => { const i = +el.dataset.i, j = +el.dataset.j, s = wk().items[i].sets[j]; if (s.done) undoIfDone(i, j); s.type = el.dataset.v; scheduleSave(); closeSheet(); refreshCard(i); };
@@ -302,11 +301,11 @@ A.setDel = el => { const i = +el.dataset.i, j = +el.dataset.j; undoIfDone(i, j);
 A.exMenu = el => {
   const i = +el.dataset.i, n = wk().items.length, it = wk().items[i];
   openSheet((exById(it.exId) || {}).name || 'Exercise', `<div class="col">
-    <button class="btn sec full" data-a="swap" data-i="${i}">⇄ Swap exercise</button>
-    <button class="btn sec full" data-a="exInfo" data-id="${it.exId}">ℹ How to do it · muscles · your history</button>
+    <button class="btn sec full" data-a="swap" data-i="${i}">${ic('swap')} Swap exercise</button>
+    <button class="btn sec full" data-a="exInfo" data-id="${it.exId}">${ic('info')} How to do it · muscles · your history</button>
     ${exTools(exById(it.exId))}
-    <button class="btn sec full" data-a="linkSS" data-i="${i}">🔗 ${it.superset ? 'Unlink superset' : 'Superset with next exercise'}</button>
-    <div class="grid2"><button class="btn sec" data-a="moveEx" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''}>↑ Move up</button><button class="btn sec" data-a="moveEx" data-i="${i}" data-d="1" ${i === n - 1 ? 'disabled' : ''}>↓ Move down</button></div>
+    <button class="btn sec full" data-a="linkSS" data-i="${i}">${ic('link')} ${it.superset ? 'Unlink superset' : 'Superset with next exercise'}</button>
+    <div class="grid2"><button class="btn sec" data-a="moveEx" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''}>${ic('arrow-up')} Move up</button><button class="btn sec" data-a="moveEx" data-i="${i}" data-d="1" ${i === n - 1 ? 'disabled' : ''}>${ic('arrow-down')} Move down</button></div>
     <button class="btn danger full" data-a="removeEx" data-i="${i}">Remove from workout</button></div>`);
 };
 A.moveEx = el => { const i = +el.dataset.i, d = +el.dataset.d, a = wk().items; if (i + d < 0 || i + d >= a.length) return; [a[i], a[i + d]] = [a[i + d], a[i]]; normSS(); scheduleSave(); closeSheet(); renderWorkout(); };
@@ -396,7 +395,7 @@ function openPicker(mode, i, f) {
   const base = `<div class="col"><input id="pick-q" type="search" placeholder="Search exercises…" data-f="pickq" autocomplete="off">
     <div class="chips scrollx" id="pick-f"></div>
     <label class="check"><input type="checkbox" data-f="pickall"> Show gear I don't have</label>
-    <button class="btn sec full" data-a="newCustom">＋ Create custom exercise</button><div id="pick-list" class="col gap6"></div></div>`;
+    <button class="btn sec full" data-a="newCustom">${ic('plus')} Create custom exercise</button><div id="pick-list" class="col gap6"></div></div>`;
   openSheet(mode === 'swap' ? 'Swap exercise' : 'Add exercise', base); paintPicker();
 }
 function paintPicker() {
@@ -409,8 +408,8 @@ function paintPicker() {
   else if (pick.f !== 'all' && pick.f !== 'similar') list = byChip(list, pick.f);
   if (q) list = list.filter(e => (e.name + ' ' + e.primary + ' ' + (e.alias || '')).toLowerCase().includes(q));
   exRank(list, inUse);
-  $('#pick-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="pickEx" data-id="${e.id}"><div><b>${isFav(e.id) ? '★ ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)} · ${e.gear.length ? e.gear.map(gearLabel).join(', ') : 'No equipment'}${hasGear(e) ? '' : ' · 🔒'}</div></div><span class="mut xs">${inUse.has(e.id) ? 'in workout' : (!e.noE1 && state.e1rm[e.id] ? state.e1rm[e.id] + ' ' + unit() : '')}</span></button>`).join('')
-    || `<div class="empty">${pick.f === 'fav' && !q ? 'No favorites yet. Open any exercise’s ⋯ menu and tap ☆ Add to favorites.' : pick.f === 'recent' && !q ? 'Exercises you have logged lately show up here.' : 'No matches.'}${q ? ` Tap “Create custom exercise” to add “${esc(pick.q)}”.` : ''}</div>`;
+  $('#pick-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="pickEx" data-id="${e.id}"><div><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)} · ${e.gear.length ? e.gear.map(gearLabel).join(', ') : 'No equipment'}${hasGear(e) ? '' : ' · ' + ic('lock')}</div></div><span class="mut xs">${inUse.has(e.id) ? 'in workout' : (!e.noE1 && state.e1rm[e.id] ? state.e1rm[e.id] + ' ' + unit() : '')}</span></button>`).join('')
+    || `<div class="empty">${pick.f === 'fav' && !q ? 'No favorites yet. Open any exercise’s menu and tap Add to favorites.' : pick.f === 'recent' && !q ? 'Exercises you have logged lately show up here.' : 'No matches.'}${q ? ` Tap “Create custom exercise” to add “${esc(pick.q)}”.` : ''}</div>`;
 }
 A.pickF = el => { pick.f = el.dataset.v; paintPicker(); };
 F.pickq = el => { pick.q = el.value; paintPicker(); };
@@ -492,7 +491,7 @@ A.tempo = el => {
   openSheet('Tempo coach', `<div class="col"><p class="mut sm">${esc(ex.name)} · lower – pause – lift – squeeze (seconds)</p>
     <div class="grid2"><div class="field"><label>Tempo</label><input id="tp-in" value="${esc(it.tempo || ex.tempo)}" placeholder="3-1-1-0"></div><div class="field"><label>Reps</label><input id="tp-reps" inputmode="numeric" value="8"></div></div>
     <div id="tp-view" class="tempo-view"><div id="tp-phase">Ready</div><div id="tp-count">—</div><div id="tp-rep" class="mut"> </div></div>
-    <div class="grid2"><button class="btn pri" data-a="tpStart" data-i="${i}">▶ Start</button><button class="btn sec" data-a="tpStop">■ Stop</button></div>
+    <div class="grid2"><button class="btn pri" data-a="tpStart" data-i="${i}">${ic('play')} Start</button><button class="btn sec" data-a="tpStop">${ic('stop')} Stop</button></div>
     <p class="mut xs">Audio cues mark each phase so you can keep your eyes on your form. Phone vibration works on Android browsers.</p></div>`, { onClose: stopTempo });
 };
 A.tpStop = () => { stopTempo(); $('#tp-phase').textContent = 'Stopped'; };
@@ -510,7 +509,7 @@ A.tpStart = el => {
   begin();
   tempoRun = { int: setInterval(() => {
     left--;
-    if (left <= 0) { k++; if (k >= seq.length) { stopTempo(); $('#tp-phase').textContent = 'Done'; $('#tp-count').textContent = '✓'; cue('timer'); buzz('set'); refreshCard(i); return; } begin(); }
+    if (left <= 0) { k++; if (k >= seq.length) { stopTempo(); $('#tp-phase').textContent = 'Done'; $('#tp-count').innerHTML = ic('check', 'xl'); cue('timer'); buzz('set'); refreshCard(i); return; } begin(); }
     else $('#tp-count').textContent = left;
   }, 1000) };
 };
@@ -525,7 +524,7 @@ function nextPR() {
   const p = prQueue.shift(), el = $('#pr');
   if (!p) { prShowing = false; el.hidden = true; return; }
   prShowing = true; cue('pr'); buzz('pr');
-  $('#pr-body').innerHTML = `<div class="trophy">🏆</div><div class="prtag">${p.milestone ? p.milestone + ' ' + unit() + ' CLUB' : 'NEW PERSONAL RECORD'}</div>
+  $('#pr-body').innerHTML = `<div class="trophy">${ic('trophy')}</div><div class="prtag">${p.milestone ? p.milestone + ' ' + unit() + ' CLUB' : 'NEW PERSONAL RECORD'}</div>
     <h2>${esc(p.ex.name)}</h2><div class="prbig">${p.weight} ${unit()} × ${p.reps}</div>
     <div class="mut">Estimated 1RM <b>${p.old}</b> → <b class="or">${p.now} ${unit()}</b> (+${Math.max(1, p.now - p.old)})</div>
     <div class="row gap6 pt8"><button class="btn pri grow" data-a="prNext">Keep lifting</button><button class="btn sec" data-a="prShare">Share</button></div>`;
@@ -534,7 +533,7 @@ function nextPR() {
   if (!reduceMotion()) for (let k = 0; k < 34; k++) { const s = document.createElement('span'); s.style.cssText = `left:${Math.random() * 100}%;background:hsl(${Math.random() * 60 + 10},95%,60%);animation-delay:${Math.random() * .6}s;animation-duration:${1.8 + Math.random() * 1.4}s`; conf.appendChild(s); }
 }
 A.prNext = nextPR;
-A.prShare = () => { const p = window.__pr; shareText(`New PR on ${p.ex.name}: ${p.weight} ${unit()} × ${p.reps} (est. 1RM ${p.now} ${unit()}) 🏆 #ForgeFit`, 'New PR'); };
+A.prShare = () => { const p = window.__pr; shareText(`New PR on ${p.ex.name}: ${p.weight} ${unit()} × ${p.reps} (est. 1RM ${p.now} ${unit()}) #ForgeFit`, 'New PR'); };
 async function shareText(text, title) {
   try { if (navigator.share) { await navigator.share({ title, text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
   try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); } catch (e) { prompt('Copy this:', text); }

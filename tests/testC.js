@@ -137,7 +137,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     ({ ctx, page } = await H.newPage(b, { opts: { colorScheme: 'dark', viewport: { width: 390, height: 844 } } }));
     await page.goto(URL + 'index.html'); await H.skipOnboarding(page); await page.click('[data-a=seenNew]');
     await page.click('#nav-more'); await page.click('[data-a=themeSet][data-v=light]');
-    H.check('light theme applied', await page.evaluate(() => document.documentElement.dataset.theme) === 'light' && (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(242, 244, 249)');
+    H.check('light theme applied', await page.evaluate(() => document.documentElement.dataset.theme) === 'light' && (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(243, 245, 249)');
     H.check('theme-color meta follows the theme', (await page.getAttribute('meta[name=theme-color]', 'content')) === '#f2f4f9');
     await page.reload(); await page.waitForSelector('#nav');
     H.check('theme survives reload', await page.evaluate(() => document.documentElement.dataset.theme) === 'light');
@@ -163,13 +163,13 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.evaluate(() => navigator.serviceWorker.ready); await page.reload(); await page.waitForSelector('#nav');
     await page.waitForFunction(() => navigator.serviceWorker.controller);
     const cached = await page.evaluate(async () => { const ks = await caches.keys(); const c = await caches.open(ks[0]); const reqs = (await c.keys()).map(r => new URL(r.url).pathname); return { ks, reqs }; });
-    H.check('service worker cache v10 holds the app shell + icons', cached.ks.includes('forgefit-v10') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
+    H.check('service worker cache v11 holds the app shell + icons', cached.ks.includes('forgefit-v11') && ['/index.html', '/icon-180.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'].every(p => cached.reqs.includes(p)), cached);
     await ctx.setOffline(true); await page.reload(); await page.waitForSelector('#nav');
     H.check('app opens fully offline', await page.locator('#exlist .ex').count() >= 1);
     await page.click('#nav-progress'); await page.click('#nav-more'); H.check('tabs work offline', page.errs.filter(e => !/Failed to load resource|net::ERR/.test(e)).length === 0, page.errs);
     await ctx.setOffline(false);
     // simulate a new release: the next service worker takes over and the app offers a reload
-    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v10", "forgefit-v11"));
+    fs.writeFileSync("/tmp/t/www/sw.js", fs.readFileSync("/tmp/t/www/sw.js", "utf8").replace("forgefit-v11", "forgefit-v12"));
     await page.evaluate(() => { wk().startedAt = Date.now(); });   // mid-workout: the app must NOT reload itself
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
     await page.waitForSelector('#toast.show.act', { timeout: 8000 });

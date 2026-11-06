@@ -31,7 +31,7 @@ function paintOb() {
   const last = o.step === steps.length - 1;
   $('#onboard').innerHTML = `<div class="ob-in"><div class="row sp"><div class="dots">${steps.map((_, i) => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('')}</div><button class="link" data-a="obSkip">${o.redo ? 'Cancel' : 'Skip'}</button></div>
     <div class="ob-body">${steps[o.step]}</div>
-    <div class="row gap6">${o.step ? '<button class="btn sec" data-a="obBack">Back</button>' : ''}<button class="btn pri grow big" data-a="${last ? 'obDone' : 'obNext'}">${last ? '⚡ Build my plan' : 'Continue'}</button></div></div>`;
+    <div class="row gap6">${o.step ? '<button class="btn sec" data-a="obBack">Back</button>' : ''}<button class="btn pri grow big" data-a="${last ? 'obDone' : 'obNext'}">${last ? 'Build my plan' : 'Continue'}</button></div></div>`;
 }
 A.obSet = el => {
   const k = el.dataset.k; let v = el.dataset.v;
@@ -165,12 +165,12 @@ function paintQLEx() {
   if (ql.f === 'today') list = list.filter(e => inW.has(e.id)); else if (ql.f !== 'all') list = byChip(list, ql.f);
   if (q) list = list.filter(e => (e.name + ' ' + e.primary + ' ' + (e.alias || '')).toLowerCase().includes(q));
   exRank(list);
-  $('#ql-ex').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="qlPick" data-id="${e.id}"><div class="grow"><b>${isFav(e.id) ? '★ ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}</div></div><span class="mut xs">${esc(lastLine(e.id))}</span></button>`).join('')
+  $('#ql-ex').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="qlPick" data-id="${e.id}"><div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}</div></div><span class="mut xs">${esc(lastLine(e.id))}</span></button>`).join('')
     || '<div class="empty">No matches. Use “Type it in” for anything else.</div>';
 }
 function paintQLList() {
   const n = ql.entries.length;
-  $('#ql-list').innerHTML = n ? `<div class="lbl pt8">To log (${n})</div>` + ql.entries.map((r, i) => `<div class="prow static"><div class="grow"><b>${esc(r.ex.name)}</b><div class="mut xs">${esc(qlSummary(r))}</div></div><button class="mini" data-a="qlDel" data-i="${i}" aria-label="Remove">✕</button></div>`).join('') : '';
+  $('#ql-list').innerHTML = n ? `<div class="lbl pt8">To log (${n})</div>` + ql.entries.map((r, i) => `<div class="prow static"><div class="grow"><b>${esc(r.ex.name)}</b><div class="mut xs">${esc(qlSummary(r))}</div></div><button class="mini" data-a="qlDel" data-i="${i}" aria-label="Remove">${ic('close')}</button></div>`).join('') : '';
   $('#ql-foot').innerHTML = `<button class="btn pri full big" data-a="qlGo" ${n ? '' : 'disabled'}>${n ? `Log ${n} entr${n > 1 ? 'ies' : 'y'} to ${esc(qlDayLabel())}` : 'Add something to log'}</button>`;
 }
 F.qlDate = el => { if (el.value) ql.date = el.value; paintQLList(); };
@@ -271,7 +271,7 @@ A.qlGo = () => {
 function saveTemplate(name, items) { state.templates.unshift({ id: uid(), name, items, t: Date.now() }); scheduleSave(); toast('Routine saved'); if (tab === 'more') renderMore(); }
 A.tplOpen = () => {
   openSheet('Routines', `<div class="col">${state.templates.length ? state.templates.map(t => `<div class="prow static"><div class="grow"><b>${esc(t.name)}</b><div class="mut xs">${t.items.length} exercises</div></div>
-    <button class="mini pri" data-a="tplStart" data-id="${t.id}">Start</button><button class="mini" data-a="tplShare" data-id="${t.id}">Share</button><button class="mini" data-a="tplDel" data-id="${t.id}">✕</button></div>`).join('') : '<div class="empty">No routines yet. Save your current session as one.</div>'}
+    <button class="mini pri" data-a="tplStart" data-id="${t.id}">Start</button><button class="mini" data-a="tplShare" data-id="${t.id}">Share</button><button class="mini" data-a="tplDel" data-id="${t.id}">${ic('close')}</button></div>`).join('') : '<div class="empty">No routines yet. Save your current session as one.</div>'}
     <button class="btn sec full" data-a="tplSaveCur">Save current workout as routine</button><button class="btn sec full" data-a="tplImport">Import routine code</button></div>`);
 };
 A.tplSaveCur = () => ask('Save routine', 'Routine name', wk().name.replace(' Session', ''), n => saveTemplate(n, wk().items.filter(it => !it.cardio).map(it => ({ exId: it.exId, superset: it.superset, sets: it.sets.filter(s => s.type !== 'warmup').map(s => ({ w: +s.weight, r: +s.reps })) }))));
@@ -416,11 +416,11 @@ function renderProgress() {
   };
   const ws4 = weeklySets(4), sk = streakInfo();
   $('#tab-progress').innerHTML = `
-    <div class="tiles t4">${tile(m30.length, 'Sessions · 30d')}${tile(m30.reduce((a, h) => a + (h.vol || 0), 0).toLocaleString(), unit() + ' volume · 30d')}${tile(m30.reduce((a, h) => a + (h.prs || 0), 0), 'PRs · 30d')}${tile(sk.streak ? '🔥 ' + sk.streak : sk.curN + '/' + sk.goal, sk.streak ? 'Week streak' : 'This week')}</div>
+    <div class="tiles t4">${tile(m30.length, 'Sessions · 30d')}${tile(m30.reduce((a, h) => a + (h.vol || 0), 0).toLocaleString(), unit() + ' volume · 30d')}${tile(m30.reduce((a, h) => a + (h.prs || 0), 0), 'PRs · 30d')}${tile(sk.streak ? ic('flame') + ' ' + sk.streak : sk.curN + '/' + sk.goal, sk.streak ? 'Week streak' : 'This week')}</div>
     ${progTools()}
     <div class="card"><div class="row sp"><h2 class="h2">Strength curve</h2><select data-f="progRange" class="sel-sm"><option value="30" ${prog.range === 30 ? 'selected' : ''}>1 month</option><option value="90" ${prog.range === 90 ? 'selected' : ''}>3 months</option><option value="365" ${prog.range === 365 ? 'selected' : ''}>1 year</option><option value="0" ${prog.range === 0 ? 'selected' : ''}>All time</option></select></div>
       ${ids.length ? `<select data-f="progEx">${ids.map(id => `<option value="${id}" ${id === prog.ex ? 'selected' : ''}>${esc(exById(id).name)}</option>`).join('')}</select>
-      <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts)}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">📈 Full history for this lift</button>`
+      <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts)}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
       : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
     ${bodyVsStrength()}
     <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="chips"><button class="chip ${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="chip ${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
@@ -429,12 +429,12 @@ function renderProgress() {
       <div class="row sp mut xs"><span>${fmtDate(now - (days - 1) * DAY)}</span><span>Today</span></div></div>
     <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The shaded band is your target range for your goal and experience. Each row shows the last 7 days, then the 4-week trend (oldest to newest).</p>
       ${MUSCLES.map(m => {
-        const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), prev = (a[0] + a[1] + a[2]) / 3, arrow = cur > prev + 1 ? '↑' : cur < prev - 1 ? '↓' : '→';
+        const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), prev = (a[0] + a[1] + a[2]) / 3, arrow = cur > prev + 1 ? ic('arrow-up') : cur < prev - 1 ? ic('arrow-down') : ic('right');
         const stat = cur >= lo && cur <= hi ? ['on target', 'gr'] : cur > hi ? ['above range', 'am'] : cur < lo * .5 ? ['low', 'rd'] : ['below target', 'am'];
         return `<div class="wrow"><span>${m}</span><div class="wbar"><b class="zone" style="left:${(lo / sc * 100).toFixed(1)}%;width:${((hi - lo) / sc * 100).toFixed(1)}%"></b><i style="width:${clamp(cur / sc * 100, 0, 100).toFixed(1)}%"></i></div><em>${fmtN(cur)}</em></div>
         <div class="wsub"><span class="${stat[1]}">${stat[0]} · aim ${lo}–${hi}</span><span>${arrow} ${a.map(fmtN).join(' · ')}</span></div>`;
       }).join('')}</div>
-    <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? hist.slice(0, 12).map(h => `<div class="prow static"><div class="grow"><b>${esc(h.name || 'Session')}</b><div class="mut xs">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')}${h.dur ? ' · ' + h.dur + ' min' : ''}${(h.cardio || []).length ? ' · cardio' : ''}</div></div><div class="right gr"><b>${h.sets} sets</b><div class="xs">${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</div></div><button class="mini" data-a="histDel" data-id="${h.id}" aria-label="Delete session">✕</button></div>`).join('') : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
+    <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? hist.slice(0, 12).map(h => `<div class="prow static"><div class="grow"><b>${esc(h.name || 'Session')}</b><div class="mut xs">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')}${h.dur ? ' · ' + h.dur + ' min' : ''}${(h.cardio || []).length ? ' · cardio' : ''}</div></div><div class="right gr"><b>${h.sets} sets</b><div class="xs">${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</div></div><button class="mini" data-a="histDel" data-id="${h.id}" aria-label="Delete session">${ic('close')}</button></div>`).join('') : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
 }
 R.progress = renderProgress;
 F.progEx = el => { prog.ex = el.value; renderProgress(); };
@@ -454,8 +454,8 @@ function renderBody() {
       <div class="grid3">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
       <button class="btn pri full mt8" data-a="measSave">Save measurements</button></div>
     <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div>${lineChart(pts)}</div>
-    <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? '<button class="mini" data-a="photoCmp">⇆ Compare</button>' : ''}<button class="mini pri" data-a="photoAdd">＋ Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : '<div class="empty">No photos yet. Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</div>'}</div></div>
-    <div class="card"><h2 class="h2">History</h2>${ms.length ? [...ms].reverse().slice(0, 15).map(m => `<div class="prow static"><div class="grow"><b>${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</b><div class="mut xs">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `${BM[k]} ${m[k]}`).join(' · ')}</div></div><button class="mini" data-a="measDel" data-id="${m.id}">✕</button></div>`).join('') : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
+    <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="mini" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="mini pri" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : '<div class="empty">No photos yet. Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</div>'}</div></div>
+    <div class="card"><h2 class="h2">History</h2>${ms.length ? [...ms].reverse().slice(0, 15).map(m => `<div class="prow static"><div class="grow"><b>${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</b><div class="mut xs">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `${BM[k]} ${m[k]}`).join(' · ')}</div></div><button class="mini" data-a="measDel" data-id="${m.id}">${ic('close')}</button></div>`).join('') : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
   hydratePhotos();
 }
 R.body = renderBody;
@@ -483,7 +483,7 @@ async function hydratePhotos() {
   const box = $('#photos'); if (!box || !state.photos.length) return;
   let html = '';
   for (const p of [...state.photos].reverse()) {
-    try { const r = await idbGet('photos', p.id); if (r && r.blob) { const u = URL.createObjectURL(r.blob); photoUrls.push(u); html += `<figure><img src="${u}" alt="Progress photo ${fmtDate(p.t)}" loading="lazy"><figcaption>${fmtDate(p.t)}<button data-a="photoDel" data-id="${p.id}" aria-label="Delete photo">✕</button></figcaption></figure>`; } } catch (e) { }
+    try { const r = await idbGet('photos', p.id); if (r && r.blob) { const u = URL.createObjectURL(r.blob); photoUrls.push(u); html += `<figure><img src="${u}" alt="Progress photo ${fmtDate(p.t)}" loading="lazy"><figcaption>${fmtDate(p.t)}<button data-a="photoDel" data-id="${p.id}" aria-label="Delete photo">${ic('close')}</button></figcaption></figure>`; } } catch (e) { }
   }
   if ($('#photos')) $('#photos').innerHTML = html || '<div class="empty">Photos unavailable.</div>';
 }
@@ -499,7 +499,7 @@ async function syncWake() {
 }
 const tog = (k, l, d) => `<label class="trow"><span><b>${l}</b>${d ? `<em>${d}</em>` : ''}</span><input type="checkbox" class="sw" data-f="setting" data-k="${k}" ${state.settings[k] ? 'checked' : ''}></label>`;
 const moreOpen = new Set(); let moreInit = false;
-const grp = (k, ic, t, sub, body) => { const o = moreOpen.has(k); return `<section class="card grp ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${o ? '▾' : '▸'}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</section>`; };
+const grp = (k, icn, t, sub, body) => { const o = moreOpen.has(k); return `<section class="card grp ${o ? 'open' : ''}"><button class="grph" data-a="moreGrp" data-k="${k}" aria-expanded="${o}"><span class="gic" aria-hidden="true">${ic(icn)}</span><span class="grow"><b>${t}</b><em>${sub}</em></span><span class="chev" aria-hidden="true">${ic(o ? 'down' : 'right')}</span></button>${o ? `<div class="grpb col">${body}</div>` : ''}</section>`; };
 function renderMore() {
   const p = state.profile, s = state.settings, G = GOALS[p.goal] || GOALS.muscle, standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!moreInit) { moreInit = true; if (backupDue() || !state.lastExport) moreOpen.add('data'); }
@@ -521,16 +521,16 @@ function renderMore() {
     timers: `${tog('notify', 'Rest-timer notifications', 'Alert when the timer ends while the app is in the background')}
       ${tog('wake', 'Keep screen awake', 'Uses more battery. Off by default.')}`,
     gear: `<div class="chips scrollx">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => `<button class="chip ${state.activeProfile === n ? 'on' : ''}" data-a="gearPreset" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
-      <div class="gear">${Object.keys(state.gear).map(g => `<button class="${state.gear[g] ? 'on' : ''}" data-a="gearToggle" data-k="${esc(g)}"><span>${esc(gearLabel(g))}</span><b>${state.gear[g] ? '✓' : 'Off'}</b></button>`).join('')}</div>
-      <div class="grid2"><button class="btn sec" data-a="gearAdd">＋ Add equipment</button><button class="btn sec" data-a="gearSave">Save as profile</button></div>
+      <div class="gear">${Object.keys(state.gear).map(g => `<button class="${state.gear[g] ? 'on' : ''}" data-a="gearToggle" data-k="${esc(g)}"><span>${esc(gearLabel(g))}</span><b>${state.gear[g] ? ic('check') : 'Off'}</b></button>`).join('')}</div>
+      <div class="grid2"><button class="btn sec" data-a="gearAdd">${ic('plus')} Add equipment</button><button class="btn sec" data-a="gearSave">Save as profile</button></div>
       ${Object.keys(state.gearProfiles).length ? `<div class="mut xs">Saved profiles: ${Object.keys(state.gearProfiles).map(n => `${esc(n)} <button class="link" data-a="gearDelProfile" data-v="${esc(n)}">remove</button>`).join(' · ')}</div>` : ''}`,
-    lib: `<div class="grid2"><button class="btn sec" data-a="planOpen">📅 Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">📖 Exercise library</button></div>
+    lib: `<div class="grid2"><button class="btn sec" data-a="planOpen">${ic('calendar')} Plan &amp; blocks</button><button class="btn sec" data-a="libOpen">${ic('book')} Exercise library</button></div>
       <div class="sep"></div>
       <div class="row sp"><b>Routines</b><button class="mini" data-a="tplOpen">Open</button></div>
       <p class="mut sm">${state.templates.length} saved. Share is manual and opt-in: you copy a code, no accounts, feeds or leaderboards.</p>
       <div class="sep"></div>
-      <div class="row sp"><b>Custom exercises</b><button class="mini pri" data-a="cxOpen">＋ New</button></div>
-      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">✕</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}`,
+      <div class="row sp"><b>Custom exercises</b><button class="mini pri" data-a="cxOpen">${ic('plus')} New</button></div>
+      ${state.customExercises.length ? state.customExercises.map(c => `<div class="prow static"><div class="grow"><b>${esc(c.name)}</b><div class="mut xs">${esc(c.primary)}${c.secondary.length ? ' + ' + esc(c.secondary.join(', ')) : ''} · ${c.gear.length ? esc(c.gear.map(gearLabel).join(', ')) : 'No equipment'}</div></div><button class="mini" data-a="cxDel" data-id="${c.id}">${ic('close')}</button></div>`).join('') : '<p class="mut sm">Create lifts with custom muscle mapping. They join the generator and swap list.</p>'}`,
     people: profCard(true),
     data: `<div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
@@ -554,20 +554,20 @@ function renderMore() {
     <div class="row sp px4"><span class="lbl">Settings</span><button class="link" data-a="moreAll">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
 
     <h3 class="grpt">Preferences</h3>
-    ${grp('display', '🎨', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}
-    ${grp('training', '🏋️', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}
-    ${grp('sound', '🔊', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}
-    ${grp('timers', '⏱', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}
+    ${grp('display', 'palette', 'Appearance &amp; units', 'Theme, lb or kg, week start', sets.display)}
+    ${grp('training', 'dumbbell', 'Training', 'RPE, warm-ups, rest times, plates', sets.training)}
+    ${grp('sound', 'volume', 'Sound &amp; haptics', 'Cues, volume, vibration', sets.sound)}
+    ${grp('timers', 'timer', 'Timers &amp; screen', 'Notifications, keep screen awake', sets.timers)}
 
     <h3 class="grpt">Workout setup</h3>
-    ${grp('gear', '🧰', 'Equipment', 'What you have available', sets.gear)}
-    ${grp('lib', '📚', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}
-    ${grp('people', '👥', 'People', 'Separate history for each person', sets.people)}
+    ${grp('gear', 'wrench', 'Equipment', 'What you have available', sets.gear)}
+    ${grp('lib', 'library', 'Library &amp; routines', 'Plan, exercises, routines, custom lifts', sets.lib)}
+    ${grp('people', 'users', 'People', 'Separate history for each person', sets.people)}
 
     <h3 class="grpt">Data &amp; app</h3>
-    ${grp('data', '💾', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}
-    ${grp('integ', '🔗', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}
-    ${grp('adv', '⚙️', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}
+    ${grp('data', 'database', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}
+    ${grp('integ', 'plug', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}
+    ${grp('adv', 'sliders', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}
 
     <p class="mut xs center">ForgeFit v${APP_VER} · private-first · no accounts, no tracking, no feeds.</p>`;
 }

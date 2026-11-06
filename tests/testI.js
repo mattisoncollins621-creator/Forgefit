@@ -33,11 +33,11 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.evaluate(() => { state.seen.v8 = true; state.seen.v4 = true; renderWorkout(); });
     await page.click('#nav-more'); await page.click('[data-a=libOpen]'); await page.fill('#lib-q', 'hack squat'); await page.locator('#lib-list .prow').first().click();
     const btn = page.locator('#sheet [data-a=favToggle]'); H.check('info sheet shows an "Add to favorites" button', /Add to favorites/.test(await btn.textContent()));
-    await btn.click(); H.check('button flips to ★ Favorite and the state saves', /★ Favorite/.test(await btn.textContent()) && await page.evaluate(() => isFav('hack_squat')));
+    await btn.click(); H.check('button flips to ★ Favorite and the state saves', /Favorite/.test(await btn.textContent()) && !/Add to/.test(await btn.textContent()) && await page.evaluate(() => isFav('hack_squat')));
     await page.click('#sheet .ib[data-a=closeSheet]');
     await page.click('#nav-workout'); await page.click('[data-a=addEx]'); await page.check('[data-f=pickall]');
     let names = await page.locator('#pick-list .prow b').allInnerTexts();
-    H.check('favorites sort first in Add exercise and carry a ★', names[0].startsWith('★') && /Hack Squat/.test(names[0]), names.slice(0, 3));
+    H.check('favorites sort first in Add exercise and carry a ★', /Hack Squat/.test(names[0]) && await page.locator('#pick-list .prow').first().locator('svg.fav').count() === 1, names.slice(0, 3));
     H.check('then recently used lifts come before the rest (bench, squat, row, press near the top)', ['Barbell Bench Press', 'Barbell Back Squat'].every(n => names.slice(1, 8).some(x => x.includes(n))), names.slice(0, 8));
     await page.click('#pick-f [data-v=fav]'); names = await page.locator('#pick-list .prow b').allInnerTexts();
     H.check('Favorites chip lists only starred lifts', names.length === 1 && /Hack Squat/.test(names[0]), names);

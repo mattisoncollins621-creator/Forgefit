@@ -8,6 +8,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KG = 0.45359237;
+/* ---------- icons: one inline SVG set (24px grid, 1.75 stroke) ---------- */
+const ICONS = __ICONS__;
+const ic = (n, c) => `<svg class="ic${c ? ' ' + c : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 /* ---------- live session (started / paused) ---------- */
 const SESSK = ['startedAt', 'pausedAt', 'pausedMs', 'pausedRest', 'pausedLabel'];
 const carrySession = (from, to) => { SESSK.forEach(k => { if (from && from[k]) to[k] = from[k]; }); return to; };

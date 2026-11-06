@@ -143,7 +143,7 @@ function streakInfo() {
 function streakLine() {
   const st = streakInfo(); if (!st.streak && !st.curN) return '';
   const left = st.goal - st.curN;
-  return `<p class="center sm or">🔥 ${st.streak ? st.streak + '-week streak · ' : ''}${st.curN}/${st.goal} sessions this week${left <= 0 ? ' · goal hit!' : ''}</p>`;
+  return `<p class="center sm or">${ic('flame')} ${st.streak ? st.streak + '-week streak · ' : ''}${st.curN}/${st.goal} sessions this week${left <= 0 ? ' · goal hit!' : ''}</p>`;
 }
 const SHORT_SPLIT = { push: 'Push', pull: 'Pull', legs: 'Legs', upper: 'Upper', lower: 'Lower', full: 'Full' };
 function weekCard() {
@@ -155,16 +155,16 @@ function weekCard() {
   for (let k = 0; k < 7; k++) {
     const t = addDays(ws, k), d = new Date(t), key = ymd(t), isToday = key === tk, past = t < today, did = done.has(key) || (isToday && inProg), plan = td.includes(d.getDay());
     let cls = 'rest', lab = 'Rest';
-    if (did) { cls = 'did'; lab = '✓'; }
+    if (did) { cls = 'did'; lab = ic('check'); }
     else if (plan && !past) { cls = 'plan'; lab = seq ? SHORT_SPLIT[seq[li % seq.length]] : 'Smart'; li++; }
     else if (plan) { cls = 'miss'; lab = '–'; }
     cells.push(`<div class="wd ${cls} ${isToday ? 'today' : ''}"><span>${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span><b>${d.getDate()}</b><small>${lab}</small></div>`);
   }
   const st = streakInfo(), adv = restAdvice();
   return `<button class="card week" data-a="planOpen" aria-label="Open weekly plan">
-    <div class="row sp"><span class="lbl">This week</span><span class="mut xs">${st.streak ? `<b class="or">🔥 ${st.streak}-week streak</b> · ` : ''}${st.curN}/${st.goal} sessions</span></div>
+    <div class="row sp"><span class="lbl">This week</span><span class="mut xs">${st.streak ? `<b class="or">${ic('flame')} ${st.streak}-week streak</b> · ` : ''}${st.curN}/${st.goal} sessions</span></div>
     <div class="wk7">${cells.join('')}</div>
-    <div class="wadv ${adv.tone}">${esc(adv.short)} <i>Plan ›</i></div></button>`;
+    <div class="wadv ${adv.tone}">${esc(adv.short)} <i>Plan ${ic('right')}</i></div></button>`;
 }
 
 /* ---------- rest-day advice from recovery ---------- */
@@ -219,7 +219,7 @@ function checkBlock() {
 }
 function blockBanner() {
   const i = blockInfo(); if (!i || !i.done || state.block.ackDone) return '';
-  return `<div class="banner ok"><div class="grow"><b>Training block complete 🎉</b><div class="mut sm">${i.weeks} weeks done, including the deload. Check your strength curve, then plan the next block.</div></div><div class="col gap6"><button class="mini pri" data-a="planOpen">Plan next</button><button class="mini" data-a="blockAck">Dismiss</button></div></div>`;
+  return `<div class="banner ok"><div class="grow"><b>Training block complete</b><div class="mut sm">${i.weeks} weeks done, including the deload. Check your strength curve, then plan the next block.</div></div><div class="col gap6"><button class="mini pri" data-a="planOpen">Plan next</button><button class="mini" data-a="blockAck">Dismiss</button></div></div>`;
 }
 A.blockAck = () => { if (state.block) { state.block.ackDone = true; scheduleSave(); renderWorkout(); } };
 let planWeeks = 8;
@@ -250,7 +250,7 @@ function planHtml() {
   const tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
   return `<div class="col">
     <div class="banner ${{ go: 'ok', light: 'note', rest: 'warn', ok: 'info' }[a.tone]}"><div class="grow"><b>${esc(a.title)}</b><div class="mut sm">${esc(a.body)}</div></div></div>
-    <div class="tiles">${tile(st.streak ? '🔥 ' + st.streak : '0', 'Week streak')}${tile(st.curN + '/' + st.goal, 'This week')}${tile(st.best, 'Best streak')}</div>
+    <div class="tiles">${tile(st.streak ? ic('flame') + ' ' + st.streak : '0', 'Week streak')}${tile(st.curN + '/' + st.goal, 'This week')}${tile(st.best, 'Best streak')}</div>
     <div class="field"><label>Training days</label><div class="chips">${order.map(d => `<button class="chip ${td.includes(d) ? 'on' : ''}" data-a="planDay" data-d="${d}">${DOW[d]}</button>`).join('')}</div>
       <p class="mut xs pt8">Tap the days you plan to train. Your weekly goal (${td.length}) and streak follow this. A streak counts weeks where you hit your goal.</p></div>
     <div class="sep"></div>
@@ -319,7 +319,7 @@ function topBanners() {
 const profName = id => (PROFILES.list.find(p => p.id === id) || {}).name || 'Me';
 function paintChrome() {
   const b = $('#pname'); if (!b) return;
-  b.hidden = PROFILES.list.length < 2; b.textContent = '👤 ' + profName(PROFILES.active);
+  b.hidden = PROFILES.list.length < 2; b.innerHTML = ic('user') + ' ' + esc(profName(PROFILES.active));
 }
 async function switchProfile(id) {
   flushSave();
@@ -328,9 +328,9 @@ async function switchProfile(id) {
 }
 function profCard(inner) {
   const cur = PROFILES.active;
-  return `${inner ? '' : '<div class="card col">'}<div class="row sp">${inner ? '<b>People on this phone</b>' : '<h2 class="h2">People on this phone</h2>'}<button class="mini pri" data-a="profAdd">＋ Add</button></div>
+  return `${inner ? '' : '<div class="card col">'}<div class="row sp">${inner ? '<b>People on this phone</b>' : '<h2 class="h2">People on this phone</h2>'}<button class="mini pri" data-a="profAdd">${ic('plus')} Add</button></div>
     <p class="mut sm">Each person gets their own workouts, history, photos and settings. Switching reloads the app.</p>
-    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">✕</button>` : ''}</div>`).join('')}${inner ? '' : '</div>'}`;
+    ${PROFILES.list.map(p => `<div class="prow static"><div class="grow"><b>${esc(p.name)}</b></div>${p.id === cur ? '<span class="tag gr">Active</span>' : `<button class="mini pri" data-a="profSwitch" data-id="${esc(p.id)}">Switch</button>`}<button class="mini" data-a="profRename" data-id="${esc(p.id)}">Rename</button>${PROFILES.list.length > 1 && p.id !== cur ? `<button class="mini" data-a="profDel" data-id="${esc(p.id)}" aria-label="Delete profile">${ic('close')}</button>` : ''}</div>`).join('')}${inner ? '' : '</div>'}`;
 }
 A.profSwitch = el => { if (el.dataset.id !== PROFILES.active) switchProfile(el.dataset.id); };
 A.profMenu = () => openSheet('Switch person', `<div class="col">${PROFILES.list.map(p => `<button class="prow" data-a="profSwitch" data-id="${esc(p.id)}"><b>${esc(p.name)}</b>${p.id === PROFILES.active ? '<span class="tag gr">Active</span>' : ''}</button>`).join('')}</div>`);
@@ -485,7 +485,7 @@ function paintLib() {
   let list = allEx(); if (lib.f !== 'all') list = byChip(list, lib.f);
   if (q) list = list.filter(e => (e.name + ' ' + e.primary + ' ' + (e.alias || '')).toLowerCase().includes(q));
   list.sort((a, b) => a.name.localeCompare(b.name));
-  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib"><div class="grow"><b>${isFav(e.id) ? '★ ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : '🔒'}</span></button>`).join('') || '<div class="empty">No matches.</div>';
+  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib"><div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : ic('lock')}</span></button>`).join('') || '<div class="empty">No matches.</div>';
 }
 A.libF = el => { lib.f = el.dataset.v; paintLib(); };
 F.libq = el => { lib.q = el.value; paintLib(); };
@@ -501,8 +501,8 @@ A.exInfo = el => {
     <ol class="how">${steps.map((t, k) => `<li><b>${steps.length > 1 ? labels[k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol>
     ${ex.cardio ? '' : `<div class="prow static"><div class="grow"><b>Your numbers</b><div class="mut xs">${state.e1rm[ex.id] ? 'Estimated 1RM ' + state.e1rm[ex.id] + ' ' + unit() : 'No estimate yet'}${pr ? ' · best ' + Math.round(pr.weight) + ' × ' + pr.reps : ''}${l ? ' · last ' + l.slice(0, 4).map(s => s.w + '×' + s.r).join(', ') : ''}</div></div></div>`}
     ${exTools(ex)}
-    <a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">▶ Watch form videos</a>
-    <div class="grid2">${fromLib ? '<button class="btn sec" data-a="libOpen">‹ Library</button>' : '<button class="btn sec" data-a="closeSheet">Close</button>'}<button class="btn pri" data-a="libAdd" data-id="${ex.id}">＋ Add to workout</button></div></div>`);
+    <a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">${ic('play', 'fill')} Watch form videos</a>
+    <div class="grid2">${fromLib ? `<button class="btn sec" data-a="libOpen">${ic('back')} Library</button>` : '<button class="btn sec" data-a="closeSheet">Close</button>'}<button class="btn pri" data-a="libAdd" data-id="${ex.id}">${ic('plus')} Add to workout</button></div></div>`);
 };
 A.libAdd = el => {
   const ex = exById(el.dataset.id); if (!ex) return;

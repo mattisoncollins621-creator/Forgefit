@@ -6,7 +6,7 @@
 
 /* ---------- favorites + recents ---------- */
 const isFav = id => Array.isArray(state.favs) && state.favs.includes(id);
-const CHIPS_EXTRA = [['fav', '★ Favorites'], ['recent', 'Recent']];
+const CHIPS_EXTRA = [['fav', 'Favorites'], ['recent', 'Recent']];
 function recentIds(n = 14) {
   const out = [], seen = new Set();
   for (const h of state.history) {
@@ -26,17 +26,17 @@ function byChip(list, f) {
   if (f === 'recent') { const r = new Set(recentIds(20)); return list.filter(e => r.has(e.id)); }
   return list.filter(e => e.primary === f);
 }
-const favLabel = id => isFav(id) ? '★ Favorite' : '☆ Add to favorites';
+const favLabel = id => isFav(id) ? ic('star', 'fill') + ' Favorite' : ic('star') + ' Add to favorites';
 A.favToggle = el => {
   const id = el.dataset.id; if (!id) return;
   if (!Array.isArray(state.favs)) state.favs = [];
   const k = state.favs.indexOf(id); if (k >= 0) state.favs.splice(k, 1); else state.favs.push(id);
-  scheduleSave(); el.textContent = favLabel(id); toast(k >= 0 ? 'Removed from favorites' : 'Added to favorites');
+  scheduleSave(); el.innerHTML = favLabel(id); toast(k >= 0 ? 'Removed from favorites' : 'Added to favorites');
 };
 
 /* ---------- notes that stay with an exercise ---------- */
 const noteOf = id => (state.exNotes && state.exNotes[id]) || '';
-const noteLine = id => noteOf(id) ? `<button class="exnote" data-a="noteOpen" data-id="${esc(id)}">📝 ${esc(noteOf(id))}</button>` : '';
+const noteLine = id => noteOf(id) ? `<button class="exnote" data-a="noteOpen" data-id="${esc(id)}">${ic('pencil')} ${esc(noteOf(id))}</button>` : '';
 A.noteOpen = el => {
   const ex = exById(el.dataset.id); if (!ex || ex.cardio) return;
   openSheet('Note · ' + ex.name, `<div class="col"><p class="mut sm">A reminder that shows on this exercise every time you do it: seat height, grip, a cue that works for you.</p>
@@ -51,10 +51,10 @@ function setNote(id, v) {
 }
 A.noteSave = el => setNote(el.dataset.id, ($('#note-in').value || '').trim().slice(0, 160));
 A.noteClear = el => setNote(el.dataset.id, '');
-/* the three buttons shown in an exercise's info and ⋯ menu */
+/* the three buttons shown in an exercise's info and menu */
 function exTools(ex) {
-  return `<div class="grid2"><button class="btn sec" data-a="favToggle" data-id="${esc(ex.id)}">${favLabel(ex.id)}</button>${ex.cardio ? '<div></div>' : `<button class="btn sec" data-a="noteOpen" data-id="${esc(ex.id)}">📝 ${noteOf(ex.id) ? 'Edit note' : 'Add note'}</button>`}</div>
-    ${ex.cardio ? '' : `<button class="btn sec full" data-a="exHist" data-id="${esc(ex.id)}">📈 Full history &amp; records</button>`}`;
+  return `<div class="grid2"><button class="btn sec" data-a="favToggle" data-id="${esc(ex.id)}">${favLabel(ex.id)}</button>${ex.cardio ? '<div></div>' : `<button class="btn sec" data-a="noteOpen" data-id="${esc(ex.id)}">${ic('pencil')} ${noteOf(ex.id) ? 'Edit note' : 'Add note'}</button>`}</div>
+    ${ex.cardio ? '' : `<button class="btn sec full" data-a="exHist" data-id="${esc(ex.id)}">${ic('trend')} Full history &amp; records</button>`}`;
 }
 
 /* ---------- stalled lifts ---------- */
@@ -112,7 +112,7 @@ A.exHist = el => {
     ${pts.length >= 2 ? lineChart(pts) : ''}
     ${ss.length ? `<div class="lbl">Every session</div>${ex.noE1 ? '' : '<p class="mut xs">Right column: estimated 1RM from your best set that day, and the change from the session before.</p>'}${rows}`
       : '<div class="empty">No sessions logged with this exercise yet. Finish a workout that includes it and its history appears here.</div>'}
-    <div class="grid2"><button class="btn sec" data-a="closeSheet">Close</button><button class="btn pri" data-a="libAdd" data-id="${esc(ex.id)}">＋ Add to workout</button></div></div>`);
+    <div class="grid2"><button class="btn sec" data-a="closeSheet">Close</button><button class="btn pri" data-a="libAdd" data-id="${esc(ex.id)}">${ic('plus')} Add to workout</button></div></div>`);
 };
 
 /* ---------- records ---------- */
@@ -126,7 +126,7 @@ function paintRec(first) {
   const html = `<div class="col"><p class="mut sm">Your best set on every lift, kept automatically. Tap one for its full history.</p><div class="chips">${chip('recent', 'Newest')}${chip('heavy', 'Heaviest')}${chip('az', 'A–Z')}</div>
     ${rows.length ? rows.map(r => `<button class="prow" data-a="exHist" data-id="${esc(r.id)}"><div class="grow"><b>${esc(r.ex.name)}</b><div class="mut xs">${esc(r.ex.primary)}${r.p.t ? ' · ' + fmtDate(r.p.t, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div></div><div class="right"><b class="or">${Math.round(r.p.weight)} ${unit()} × ${r.p.reps}</b><div class="mut xs">est. 1RM ${r.p.e1rm}</div></div></button>`).join('')
       : '<div class="empty">No records yet. Log a few sets and your best lifts collect here automatically.</div>'}</div>`;
-  if (first) openSheet('🏆 Records', html); else sheetBody(html);
+  if (first) openSheet('Records', html); else sheetBody(html);
 }
 A.recOpen = () => paintRec(true);
 A.recSort = el => { recSort = el.dataset.v; paintRec(false); };
@@ -159,7 +159,7 @@ function recapHtml() {
   const lab = fmtDate(ws) + ' – ' + fmtDate(addDays(ws, 6));
   const tile = (v, l, d) => `<div class="tile"><b>${v}</b><span>${l}${d ? ` <em class="${d[0] === '+' ? 'gr' : 'rd'}">${d}</em>` : ''}</span></div>`;
   const pct = (a, b) => b > 0 && a !== b ? (a > b ? '+' : '') + Math.round((a - b) / b * 100) + '%' : '';
-  const nav = `<div class="row sp"><button class="mini" data-a="recapGo" data-d="1" ${recapOff >= 26 ? 'disabled' : ''}>‹ Older</button><b>${recapOff === 0 ? 'This week so far' : recapOff === 1 ? 'Last week' : lab}</b><button class="mini" data-a="recapGo" data-d="-1" ${recapOff <= 0 ? 'disabled' : ''}>Newer ›</button></div><div class="mut xs center">${lab}</div>`;
+  const nav = `<div class="row sp"><button class="mini" data-a="recapGo" data-d="1" ${recapOff >= 26 ? 'disabled' : ''}>${ic('back')} Older</button><b>${recapOff === 0 ? 'This week so far' : recapOff === 1 ? 'Last week' : lab}</b><button class="mini" data-a="recapGo" data-d="-1" ${recapOff <= 0 ? 'disabled' : ''}>Newer ${ic('right')}</button></div><div class="mut xs center">${lab}</div>`;
   if (!S.sessions) return `<div class="col">${nav}<div class="empty">${recapOff === 0 ? 'Nothing logged yet this week.' : 'No sessions logged that week.'}</div></div>`;
   const mover = weekMover(ws), planned = trainDays().length, st = streakInfo();
   const low = MUSCLES.map(m => ({ m, n: S.mus[m], t: setTarget(m) })).filter(x => x.n < x.t[0]).sort((a, b) => a.n / a.t[0] - b.n / b.t[0]).slice(0, 4);
@@ -170,7 +170,7 @@ function recapHtml() {
     ${mover ? `<div class="prow static"><div class="grow"><b>Biggest gain</b><div class="mut xs">${esc(mover.ex.name)}: estimated 1RM up ${Math.round(mover.pct * 10) / 10}% to ${mover.now} ${unit()}</div></div></div>` : ''}
     ${ok.length ? `<div class="prow static"><div class="grow"><b>On target</b><div class="mut xs">${ok.join(', ')} got enough hard sets.</div></div></div>` : ''}
     ${low.length ? `<div class="prow static"><div class="grow"><b>Skipped or light</b><div class="mut xs">${low.map(x => `${x.m} ${fmtN(x.n)} of ${x.t[0]}+ sets`).join(' · ')}</div></div></div>` : ''}
-    ${recapOff === 1 && st.streak ? `<p class="center sm or">🔥 ${st.streak}-week streak</p>` : ''}</div>`;
+    ${recapOff === 1 && st.streak ? `<p class="center sm or">${ic('flame')} ${st.streak}-week streak</p>` : ''}</div>`;
 }
 A.recapOpen = () => {
   const cur = weekStartOf(Date.now());
@@ -200,7 +200,7 @@ A.photoCmp = () => {
   cmp = { a: 0, b: ps.length - 1 };
   const opts = sel => ps.map((p, k) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${fmtDate(p.t, { month: 'short', day: 'numeric', year: 'numeric' })}</option>`).join('');
   openSheet('Compare photos', `<div class="col"><div class="grid2"><div class="field"><label>Before</label><select id="cmp-a" data-f="cmpA">${opts(cmp.a)}</select></div><div class="field"><label>After</label><select id="cmp-b" data-f="cmpB">${opts(cmp.b)}</select></div></div>
-    <div id="cmp-view"><div class="empty">Loading…</div></div><button class="btn sec full" data-a="cmpSwap">⇄ Swap sides</button></div>`,
+    <div id="cmp-view"><div class="empty">Loading…</div></div><button class="btn sec full" data-a="cmpSwap">${ic('swap')} Swap sides</button></div>`,
     { onClose: () => { cmpTok++; cmpUrls.forEach(u => URL.revokeObjectURL(u)); cmpUrls = []; } });
   paintCmp();
 };
@@ -222,18 +222,18 @@ async function paintCmp() {
 }
 
 /* ---------- friendlier empty screens + first-run help ---------- */
-const emptyWorkout = () => `<div class="card center col"><div class="emptyico">🏋️</div><b>Nothing planned yet</b><p class="mut sm">Let ForgeFit build today’s session from how recovered each muscle is, or pick the exercises yourself.</p><div class="grid2"><button class="btn pri" data-a="regen">⚡ Build a workout</button><button class="btn sec" data-a="addEx">＋ Add exercise</button></div></div>`;
-const progTools = () => `${state.history.length ? '' : '<div class="card center col"><div class="emptyico">📈</div><b>Your charts start with your first workout</b><p class="mut sm">Finish a session on the Workout tab and this screen fills in: strength curves, a muscle heatmap, weekly sets and your records.</p><button class="btn pri" data-a="go" data-t="workout">Go to Workout</button></div>'}
-  <div class="grid2"><button class="btn sec" data-a="recOpen">🏆 Records</button><button class="btn sec" data-a="recapOpen">📊 Weekly recap</button></div>${stalledCard()}`;
+const emptyWorkout = () => `<div class="card center col"><div class="emptyico">${ic('dumbbell')}</div><b>Nothing planned yet</b><p class="mut sm">Let ForgeFit build today’s session from how recovered each muscle is, or pick the exercises yourself.</p><div class="grid2"><button class="btn pri" data-a="regen">${ic('zap')} Build a workout</button><button class="btn sec" data-a="addEx">${ic('plus')} Add exercise</button></div></div>`;
+const progTools = () => `${state.history.length ? '' : `<div class="card center col"><div class="emptyico">${ic('trend')}</div><b>Your charts start with your first workout</b><p class="mut sm">Finish a session on the Workout tab and this screen fills in: strength curves, a muscle heatmap, weekly sets and your records.</p><button class="btn pri" data-a="go" data-t="workout">Go to Workout</button></div>`}
+  <div class="grid2"><button class="btn sec" data-a="recOpen">${ic('trophy')} Records</button><button class="btn sec" data-a="recapOpen">${ic('chart')} Weekly recap</button></div>${stalledCard()}`;
 function whatsNew() {
   if (!state.profile.done) return '';
   if (!state.history.length) {
     if (state.seen.tips) return '';
     return `<div class="card"><div class="row sp"><h2 class="h2">Getting started</h2><button class="mini" data-a="seenNew">Got it</button></div>
-      <ul class="newlist"><li>Do a set, then tap its <b>✓</b>. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Every couple of weeks, use <b>More → Back up now</b> so your history is safe.</li></ul></div>`;
+      <ul class="newlist"><li>Do a set, then tap its ${ic('check')}. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Every couple of weeks, use <b>More → Back up now</b> so your history is safe.</li></ul></div>`;
   }
   if (state.seen.v8) return '';
   return `<div class="card"><div class="row sp"><h2 class="h2">What’s new</h2><button class="mini" data-a="seenNew">Got it</button></div>
-    <ul class="newlist"><li><b>Favorites and recents</b>: star a lift (its ⋯ menu) and it floats to the top of the exercise lists.</li><li><b>Notes</b> on any exercise, like “seat 4”, show on its card every time.</li><li><b>Full history</b> for every lift, <b>stalled-lift</b> flags and a <b>Records</b> page in Progress.</li><li>A <b>weekly recap</b> each new week, and <b>photo compare</b> in Body.</li></ul></div>`;
+    <ul class="newlist"><li><b>Favorites and recents</b>: star a lift (its menu) and it floats to the top of the exercise lists.</li><li><b>Notes</b> on any exercise, like “seat 4”, show on its card every time.</li><li><b>Full history</b> for every lift, <b>stalled-lift</b> flags and a <b>Records</b> page in Progress.</li><li>A <b>weekly recap</b> each new week, and <b>photo compare</b> in Body.</li></ul></div>`;
 }
 A.seenNew = () => { state.seen.v4 = true; state.seen.v8 = true; state.seen.tips = true; scheduleSave(); renderWorkout(); };
