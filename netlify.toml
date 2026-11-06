@@ -1,0 +1,9 @@
+# ForgeFit is plain static files: no build step, the site is the repository itself.
+[build]
+  publish = "."
+
+# sw.js is the version marker the app reads, so it must never be cached.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
