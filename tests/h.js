@@ -40,6 +40,11 @@ exports.newPage = async (b, o = {}) => {
     } catch (e) { } finally { busy = false; } };
     addEventListener('DOMContentLoaded', () => new MutationObserver(go).observe(document.body, { childList: true, subtree: true }));
   });
+  // v14: live workouts open in Focus view; the older suites test the list view, so switch it off unless a test asks for it
+  if (!o.focus) await page.addInitScript(() => {
+    const off = () => { try { if (typeof state !== 'undefined' && state && state.settings && state.settings.focus !== false) { state.settings.focus = false; if (typeof sessActive === 'function' && sessActive() && !document.querySelector('#tab-workout').hidden) renderWorkout(); } } catch (e) { } };
+    addEventListener('DOMContentLoaded', () => new MutationObserver(off).observe(document.body, { childList: true, subtree: true }));
+  });
   if (o.seed !== false) await page.addInitScript(() => { let s = 777; Math.random = () => (s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296; });
   return { ctx, page };
 };

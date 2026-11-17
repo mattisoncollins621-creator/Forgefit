@@ -30,7 +30,7 @@ function planRowHtml(i) {
   const tag = it.cardio ? '<span class="tag">Cardio</span>' : `<span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span>`;
   return `<article class="card ex plan" data-ex="${i}"><div class="row gap6 top">
     <button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
-    <button class="planmain grow" data-a="planExp" data-i="${i}" aria-label="Edit sets for ${esc(ex.name)}"><div class="row gap6 wrap">${tag}${it.cardio ? '' : stalledTag(ex)}${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut xs">${esc(setsSummary(it))} · tap to edit sets</div>${!it.cardio && noteOf(ex.id) ? `<div class="planote">${ic('pencil', 'sm')} ${esc(noteOf(ex.id))}</div>` : ''}</button>
+    <button class="planmain grow" data-a="planExp" data-i="${i}" aria-label="Edit sets for ${esc(ex.name)}"><div class="row gap6 wrap">${tag}${mainTag(it)}${it.cardio ? '' : stalledTag(ex)}${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut xs">${esc(setsSummary(it))} · tap to edit sets</div>${!it.cardio && noteOf(ex.id) ? `<div class="planote">${ic('pencil', 'sm')} ${esc(noteOf(ex.id))}</div>` : ''}</button>
     <div class="row gap6">${it.cardio ? '' : `<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">${ic('swap')}</button>`}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div></article>`;
 }
 A.planExp = el => {

@@ -301,7 +301,7 @@ const LS_OLD = 'forgefit_state_v2';
 let state = null, saveT = null, idbT = null, saveFail = false;
 
 function defaultState() {
-  const muscles = {}; MUSCLES.forEach(m => muscles[m] = { recovery: 100, lastTrained: 0 });
+  const muscles = {}; MUSCLES.forEach(m => muscles[m] = { recovery: 100, lastTrained: 0, pace: 1 });
   return {
     v: 3,
     profile: { done: false, goal: 'muscle', experience: 'intermediate', gender: 'other', age: 30, heightCm: 175, weight: 180, unit: 'lb', days: 4, splitPref: 'freshness', sessionMin: 60, cardio: false },
@@ -323,7 +323,7 @@ function normalize(s) {
   out.muscles = {};
   MUSCLES.forEach(m => {
     const o = s.muscles && s.muscles[m];
-    out.muscles[m] = { recovery: o && Number.isFinite(+o.recovery) ? clamp(+o.recovery, 0, 100) : 100, lastTrained: (o && o.lastTrained) || 0 };
+    out.muscles[m] = { recovery: o && Number.isFinite(+o.recovery) ? clamp(+o.recovery, 0, 100) : 100, lastTrained: (o && o.lastTrained) || 0, pace: o && Number.isFinite(+o.pace) ? clamp(+o.pace, .6, 1.5) : 1 };
   });
   out.gear = { ...GEAR_DEFAULT, ...(s.gear || {}) };
   out.workout = { ...d.workout, ...(s.workout || {}) };
@@ -451,10 +451,24 @@ function recWeight(ex, reps, rir = 2, factor = 1) {
 }
 
 /* ---------- recovery ---------- */
+/* Recovery speed in % per hour. Big muscles worked by heavy compound lifts come back slowest; arms, calves and
+   core fastest (the average is the old flat 1.25%/h). Over-40s recover a little slower, and each muscle has a
+   personal "pace" that ForgeFit learns when you correct a slider shortly after training it. */
+const REC_BASE = { Quads: .95, Hamstrings: 1, Glutes: 1, Back: 1.05, Chest: 1.1, Shoulders: 1.3, Triceps: 1.4, Biceps: 1.45, Calves: 1.6, Core: 1.7 };
+const ageFactor = () => { const a = +state.profile.age || 30; return a >= 55 ? .85 : a >= 40 ? .92 : 1; };
+const recRate = m => (REC_BASE[m] || 1.25) * ageFactor() * ((state.muscles[m] && state.muscles[m].pace) || 1);
+const hrsToFull = m => { const r = state.muscles[m].recovery; return r >= 99.5 ? 0 : Math.ceil((100 - r) / recRate(m)); };
+function learnPace(m, modelVal, userVal) {
+  const mu = state.muscles[m]; if (!mu || !mu.lastTrained || Date.now() - mu.lastTrained > 5 * DAY) return 0;   // only right after training it
+  const d = userVal - modelVal; if (Math.abs(d) < 8) return 0;                                                  // ignore tiny nudges
+  const old = mu.pace || 1; mu.pace = +clamp(old * (1 + clamp(d / 100, -.3, .3) * .5), .6, 1.5).toFixed(3);    // at most ±15% per correction
+  return mu.pace - old;
+}
+const paceWord = m => { const p = state.muscles[m].pace || 1; return p <= .93 ? 'slower for you' : p >= 1.07 ? 'faster for you' : ''; };
 function updatePassiveRecovery() {
   const now = Date.now(), hrs = (now - (state.lastTick || now)) / 36e5;
   if (hrs <= 0) { state.lastTick = now; return; }
-  MUSCLES.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * 1.25, 0, 100); }); // floats: no rounding drift
+  MUSCLES.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * recRate(m), 0, 100); }); // floats: no rounding drift
   state.lastTick = now; scheduleSave();
 }
 const recCol = p => p > 85 ? 'gr' : p >= 50 ? 'am' : 'rd';                 // Fresh / Recovering / Fatigued

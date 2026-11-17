@@ -34,7 +34,7 @@ function renderRecovery() {
   updatePassiveRecovery();
   const coach = coachBanner(), avg = avgRecovery(), dots = ['front', 'back'].map(s => `<button class="dot${recSide === s ? ' on' : ''}" data-a="recFlip" data-v="${s}" aria-label="Show ${s} view"></button>`).join('');
   $('#tab-recovery').innerHTML = `
-    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Recovers ~1.25% per hour. Drag a slider if you feel sore.</p></div></div>
+    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Each muscle recovers at its own speed. Feel sorer or fresher than shown? Drag its slider and ForgeFit learns your pace.</p></div></div>
       <div class="row gap6 pt8 wrap"><button class="gpill" data-a="resetRec">Reset to 100%</button><button class="gpill" data-a="simTime">+24h simulate</button>${coach ? '' : '<button class="gpill" data-a="startDeload">Deload anyway</button>'}</div></div>
     ${restCard()}
     ${coach}
@@ -44,23 +44,29 @@ function renderRecovery() {
       <div class="selinfo mut sm" id="recSel">${recSel ? recSelText(recSel) : 'Tap a muscle to jump to its slider. Swipe to turn the figure.'}</div>
       <div class="rlegend"><span><i class="gr"></i>Fresh</span><span><i class="am"></i>Recovering</span><span><i class="rd"></i>Fatigued</span></div></div>
     <div class="card rlist">${MUSCLES.map(m => { const p = rec(m), c = recCol(p);
-      return `<div class="rrow ${c}" data-row="${m}"><div class="rtop"><b>${m}</b><span class="tag ${c}" data-badge>${recWord(p)}</span><span class="rpct" data-pct>${p}%</span></div>
-      <input type="range" class="rs" min="0" max="100" value="${p}" style="--p:${p}%" data-f="recSlide" data-live="1" data-m="${m}" aria-label="${m} freshness"></div>`; }).join('')}</div>`;
+      return `<div class="rrow ${c}" data-row="${m}"><div class="rtop"><span class="grow"><b>${m}</b><small class="rsub" data-sub>${recSub(m)}</small></span><span class="tag ${c}" data-badge>${recWord(p)}</span><span class="rpct" data-pct>${p}%</span></div>
+      <input type="range" class="rs" min="0" max="100" value="${p}" style="--p:${p}%" data-f="recSlide" data-learn="recLearn" data-live="1" data-m="${m}" aria-label="${m} freshness"></div>`; }).join('')}</div>`;
 }
 R.recovery = renderRecovery;
+const recSub = m => { const h = hrsToFull(m), pw = paceWord(m); return (h ? `full in ~${h < 48 ? h + 'h' : Math.round(h / 24) + ' days'}` : 'fully recovered') + (pw ? ` · ${pw}` : ''); };
 const recSelText = m => `<b>${m}</b> · ${rec(m)}% fresh · ${recWord(rec(m))}`;
 function paintRecLive(m) {
   const p = rec(m), c = recCol(p);
   document.querySelectorAll(`#tab-recovery .mus[data-m="${m}"]`).forEach(g => { g.classList.remove('gr', 'am', 'rd'); g.classList.add(c); g.setAttribute('aria-label', `${m} ${p}% fresh`); });
   const row = document.querySelector(`#tab-recovery .rrow[data-row="${m}"]`);
-  if (row) { row.classList.remove('gr', 'am', 'rd'); row.classList.add(c); const b = row.querySelector('[data-badge]'); b.className = 'tag ' + c; b.textContent = recWord(p); row.querySelector('[data-pct]').textContent = p + '%'; const s = row.querySelector('input'); s.style.setProperty('--p', p + '%'); if (+s.value !== p) s.value = p; }
+  if (row) { row.classList.remove('gr', 'am', 'rd'); row.classList.add(c); const b = row.querySelector('[data-badge]'); b.className = 'tag ' + c; b.textContent = recWord(p); row.querySelector('[data-pct]').textContent = p + '%'; row.querySelector('[data-sub]').textContent = recSub(m); const s = row.querySelector('input'); s.style.setProperty('--p', p + '%'); if (+s.value !== p) s.value = p; }
   const avg = avgRecovery(), ring = $('#rring');
   if (ring) { ring.classList.remove('gr', 'am', 'rd'); ring.classList.add(recCol(avg)); ring.querySelector('.rv').setAttribute('stroke-dashoffset', (RING_C * (1 - avg / 100)).toFixed(1)); $('#rring-n').textContent = avg + '%'; }
   if (recSel === m && $('#recSel')) $('#recSel').innerHTML = recSelText(m);
 }
-F.recSlide = el => { const m = el.dataset.m; state.muscles[m].recovery = +el.value; scheduleSave(); paintRecLive(m); };
+F.recSlide = el => { const m = el.dataset.m; if (el.dataset.from == null) el.dataset.from = state.muscles[m].recovery; state.muscles[m].recovery = +el.value; scheduleSave(); paintRecLive(m); };
+F.recLearn = el => {                       // when a drag ends, compare what you set with what the model expected
+  const m = el.dataset.m, from = +el.dataset.from; delete el.dataset.from; if (!Number.isFinite(from)) return;
+  const d = learnPace(m, from, +el.value); if (!d) return; scheduleSave(); paintRecLive(m);
+  toast(`Got it: ${m.toLowerCase()} will recover a bit ${d < 0 ? 'slower' : 'faster'} for you from now on.`);
+};
 A.resetRec = () => { MUSCLES.forEach(m => state.muscles[m].recovery = 100); scheduleSave(); renderRecovery(); };
-A.simTime = () => { MUSCLES.forEach(m => state.muscles[m].recovery = Math.min(100, state.muscles[m].recovery + 24 * 1.25)); scheduleSave(); renderRecovery(); };
+A.simTime = () => { MUSCLES.forEach(m => state.muscles[m].recovery = Math.min(100, state.muscles[m].recovery + 24 * recRate(m))); scheduleSave(); renderRecovery(); };
 function setRecSide(s) {
   recSide = s; const f = $('#flipin'); if (!f) return;
   f.classList.toggle('back', s === 'back');

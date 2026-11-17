@@ -106,6 +106,29 @@ function smartDay() {
   }).sort((a, b) => b.sc - a.sc);
   return ranked.find(r => dayPool(r.d).length) || ranked[0];
 }
+/* Main lifts stay the same for a whole training block (or a 4-week stretch without one) so you can add weight to
+   the same movements week after week; only the accessories rotate. Swapping a main lift makes the swap stick. */
+const anchorKey = () => state.block && state.block.start ? 'b' + state.block.start : 'w' + Math.floor(weekStartOf(Date.now()) / (28 * DAY));
+const mainTag = it => it && it.main ? '<span class="tag or">Main lift</span>' : '';
+function anchorsFor(sp, scored) {
+  state.anchors = state.anchors || {};
+  const key = anchorKey(), cur = state.anchors[sp];
+  if (cur && cur.key === key) {
+    const keep = cur.ids.map(exById).filter(e => e && hasGear(e) && fitsDay(e, sp));
+    if (keep.length) return keep;
+  }
+  /* one slot per main movement for the day; heavy barbell/dumbbell/machine compounds first, bodyweight only if nothing else fits */
+  const SLOTS = { push: [['Chest'], ['Shoulders']], pull: [['Back'], ['Back']], legs: [['Quads'], ['Hamstrings', 'Glutes']], upper: [['Chest'], ['Back']], lower: [['Quads'], ['Hamstrings', 'Glutes']], full: [['Quads'], ['Chest'], ['Back']] }[sp] || [];
+  const out = [];
+  SLOTS.forEach(ms => {
+    const ok = ex => ms.includes(ex.primary) && !ex.noE1 && !out.includes(ex);
+    const hit = scored.find(({ ex }) => ok(ex) && ex.type === 'compound') || scored.find(({ ex }) => ok(ex) && ex.type === 'bodyweight');
+    if (hit) out.push(hit.ex);
+  });
+  state.anchors[sp] = { key, ids: out.map(e => e.id) };
+  return out;
+}
+A.newMain = () => { if (state.anchors) delete state.anchors[wk().split]; generateWorkout(true); toast('New main lifts picked for this block'); renderWorkout(); };
 function generateWorkout(quiet) {
   updatePassiveRecovery();
   const p = state.profile, g = GOALS[p.goal] || GOALS.muscle, dl = isDeload();
@@ -117,14 +140,15 @@ function generateWorkout(quiet) {
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
   const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
-  const sel = [], cnt = {};
+  const anchors = anchorsFor(sp, scored).slice(0, maxEx), sel = [...anchors], cnt = {};
+  anchors.forEach(ex => cnt[ex.primary] = (cnt[ex.primary] || 0) + 1);
   for (const cap of [1, 2]) for (const { ex } of scored) {
     if (sel.length >= maxEx) break;
     if (sel.includes(ex) || (cnt[ex.primary] || 0) >= cap) continue;
     sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1;
   }
   const rank = { compound: 0, bodyweight: 1, isolation: 2 };
-  sel.sort((a, b) => rank[a.type] - rank[b.type]);
+  sel.sort((a, b) => (anchors.includes(b) - anchors.includes(a)) || rank[a.type] - rank[b.type]);
   const av = sel.reduce((a, e) => a + exFresh(e), 0) / sel.length;
   let f = av < 55 ? .9 : av < 75 ? .95 : 1; if (dl) f *= .9;
   const items = sel.map(ex => {
@@ -132,7 +156,9 @@ function generateWorkout(quiet) {
     let n = fixed ? ex.sets : (comp ? g.cSets : g.iSets);
     if (p.experience === 'beginner') n = Math.min(n, 3);
     if (dl) n = Math.max(2, Math.ceil(n * .6)); else if (av < 55) n = Math.max(2, n - 1);
-    return buildItem(ex, { factor: f, sets: n, rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
+    const it = buildItem(ex, { factor: f, sets: n, rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
+    if (anchors.includes(ex)) it.main = true;
+    return it;
   });
   if (p.cardio || p.goal === 'tone' || p.goal === 'fitness') {
     const lastC = new Set(state.history.slice(0, 3).flatMap(h => (h.cardio || []).map(c => c.exId)));
@@ -141,6 +167,7 @@ function generateWorkout(quiet) {
   }
   const strength = items.filter(i => !i.cardio), pre = strength.filter(i => prefillFrom(exById(i.exId))).length, bits = [], bi = blockInfo();
   if (smart) bits.push(`Smart pick: ${SPLIT_NAME[sp]} day, ${smart.ms.map(m => m.toLowerCase()).join(', ')} ${smart.fresh > 85 ? 'are fresh' : 'are the most recovered'}`);
+  if (anchors.length) bits.push(`Main lifts for this ${state.block && state.block.start ? 'block' : '4-week stretch'}: ${anchors.map(e => e.name.replace(/\s*\(.*?\)/g, '')).join(', ')}`);
   if (dl) bits.push('Deload week');
   if (bi && !bi.done && !bi.deload) bits.push(`Block week ${bi.week} of ${bi.weeks}`);
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');
@@ -187,12 +214,13 @@ function cardHtml(i) {
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
       <button class="btn ${it.done ? 'ok' : 'sec'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? ic('check') + ' Completed' : 'Mark complete'}</button></article>`;
   }
-  const pct = rec(ex.primary), bc = recCol(pct), last = lastPerf(ex.id);
+  const pct = rec(ex.primary), bc = recCol(pct), last = lastPerf(ex.id), cur = curSet();
   let wn = 0;
   const rows = it.sets.map((s, j) => {
     const lbl = s.type === 'warmup' ? 'W' : s.type === 'drop' ? 'D' : ++wn;
     const ph = last && last[Math.min(j, last.length - 1)];
-    return `<div class="swrap"><div class="swbg"><span>${ic('plus')} Duplicate</span><span>Delete ${ic('close')}</span></div><div class="srow ${s.done ? 'done' : ''} ${s.type}">
+    const isCur = cur && cur.i === i && cur.j === j && sessActive();
+    return `<div class="swrap"><div class="swbg"><span>${ic('plus')} Duplicate</span><span>Delete ${ic('close')}</span></div><div class="srow ${s.done ? 'done' : ''} ${s.type}${isCur ? ' cur' : ''}">
       <button class="snum t-${s.type}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Set options">${lbl}</button>
       <input inputmode="decimal" value="${s.weight}" placeholder="${ph ? ph.w : ''}" data-f="set" data-k="weight" data-i="${i}" data-j="${j}" aria-label="Weight">
       <input inputmode="numeric" value="${s.reps}" placeholder="${ph ? ph.r : ''}" data-f="set" data-k="reps" data-i="${i}" data-j="${j}" aria-label="Reps">
@@ -203,7 +231,7 @@ function cardHtml(i) {
   const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
   const canWarm = state.settings.warmups && ex.type === 'compound' && !ex.noE1 && !ex.bw && !it.sets.some(s => s.type === 'warmup');
   return `<article class="card ex" data-ex="${i}">
-    <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${ss}</div>
+    <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${mainTag(it)}${ss}</div>
       <h3 class="exn">${esc(ex.name)}</h3>${last ? `<div class="mut xs">Last: ${last.slice(0, 4).map(s => `${s.w}×${s.r}`).join(' · ')}</div>` : ''}${noteLine(ex.id)}</div>
       <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">${ic('swap')}</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div>
     ${coach}
@@ -231,7 +259,8 @@ function renderWorkout() {
   const list = `<div id="exlist" class="col${sessPaused() ? ' dimmed' : ''}">${w.items.map((_, i) => cardHtml(i)).join('') || emptyWorkout()}</div>
     <div class="row gap6"><button class="btn sec grow" data-a="addEx">${ic('plus')} Add exercise</button><button class="btn sec grow" data-a="addCardio">${ic('activity')} Add cardio</button></div>`;
   if (live) {
-    tabEl.innerHTML = `${sessHeader()}${list}
+    const fo = focusOn() && w.items.length > 0;
+    tabEl.innerHTML = `${sessHeader()}${viewBar(fo)}${fo ? focusHtml() : list}
     <button class="btn danger full big" data-a="endWorkout">${ic('stop')} End workout</button>`;
   } else {
     const st = planStats(), n = w.items.length, trimM = /trimmed (\d+)%/.exec(w.note || ''), trimmed = w.items.some(it => it.trimmed);
@@ -255,7 +284,7 @@ function renderWorkout() {
 R.workout = renderWorkout;
 A.wkMore = () => {
   const b = (x, icn, l, d) => `<button class="btn sec full lrow" data-a="editDo" data-x="${x}">${ic(icn)}<span><b>${l}</b><em>${d}</em></span></button>`;
-  openSheet('More options', `<div class="col">${b('repeatLast', 'repeat', 'Repeat last workout', 'Start from your previous session')}${b('planOpen', 'calendar', 'Plan &amp; training blocks', 'Weekly schedule and ramp-up blocks')}${b('regen', 'refresh', 'Regenerate workout', 'Build a fresh plan from your recovery')}</div>`);
+  openSheet('More options', `<div class="col">${b('repeatLast', 'repeat', 'Repeat last workout', 'Start from your previous session')}${b('planOpen', 'calendar', 'Plan &amp; training blocks', 'Weekly schedule and ramp-up blocks')}${b('regen', 'refresh', 'Regenerate workout', 'Rotate accessories, keep your main lifts')}${b('newMain', 'dumbbell', 'Pick new main lifts', 'Choose different main lifts for this block')}</div>`);
 };
 function refreshCard(i) {
   const el = $(`#exlist [data-ex="${i}"]`); if (!el) return renderWorkout();
@@ -291,7 +320,8 @@ A.toggleSet = el => {
     if (pr) showPR(pr);
   } else undoSet(it, s, ex);
   scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i);
-  if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } }
+  if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } afterLog(i); }
+  else if (focusOn()) { focusSet = j; renderWorkout(); }
 };
 F.set = el => {
   const i = +el.dataset.i, j = +el.dataset.j, k = el.dataset.k, s = wk().items[i] && wk().items[i].sets[j]; if (!s) return;
@@ -452,7 +482,8 @@ function swapTo(i, id) {
   if (it.cardio || nex.cardio) { const n = buildItem(nex, {}); n.superset = it.superset; wk().items[i] = n; normSS(); return; }
   const done = it.sets.filter(s => s.done), total = Math.max(1, it.sets.length - done.length) || 1;
   const fresh = buildItem(nex, { sets: done.length ? total : it.sets.length, factor: 1 });
-  fresh.superset = it.superset;
+  fresh.superset = it.superset; fresh.main = it.main;
+  if (it.main && state.anchors && state.anchors[wk().split]) { const a = state.anchors[wk().split]; a.ids = a.ids.map(x => x === old.id ? nex.id : x); }
   if (done.length) { it.sets = done; it.superset = null; wk().items.splice(i + 1, 0, fresh); toast('Logged sets kept; new exercise added below'); }
   else { wk().items[i] = fresh; toast(`Swapped to ${nex.name}`); }
   normSS();

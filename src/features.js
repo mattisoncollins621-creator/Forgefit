@@ -251,7 +251,7 @@ function logQLPast(list, t) {      // saved straight to history on the chosen da
     items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], mw: exW(ex), sets: out });
     if (best > 0) { const h = (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []); h.push({ t, v: Math.round(best) }); h.sort((a, b) => a.t - b.t); }
   });
-  touched.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * 1.25, 0, 100); mu.lastTrained = Math.max(prevLast[m], t); });   // fatigue from that day has partly recovered
+  touched.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * recRate(m), 0, 100); mu.lastTrained = Math.max(prevLast[m], t); });   // fatigue from that day has partly recovered
   state.history.push({ id: uid(), t, name: 'Quick log', split: '', sets, vol: Math.round(vol), dur: 0, unit: unit(), prs, items, cardio, manual: true });
   state.history.sort((a, b) => b.t - a.t); state.history = state.history.slice(0, 400);
 }
@@ -702,6 +702,7 @@ function bind() {
   document.addEventListener('input', e => { const el = e.target.closest('[data-f]'); if (el && (isTextLike(el) || el.dataset.live) && F[el.dataset.f]) F[el.dataset.f](el); });
   document.addEventListener('change', e => {
     const el = e.target.closest('[data-f]'); if (el && !isTextLike(el) && F[el.dataset.f]) F[el.dataset.f](el);
+    if (el && el.dataset.learn && F[el.dataset.learn]) F[el.dataset.learn](el);
     if (e.target.id === 'photo-in' && e.target.files[0]) { addPhoto(e.target.files[0]); e.target.value = ''; }
     if (e.target.id === 'import-in' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; }
   });
