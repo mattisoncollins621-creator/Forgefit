@@ -186,6 +186,61 @@ const C = (id, name, gear, dist, min, cue, alias) => ({
   id, name, primary: 'Cardio', secondary: [], split: ['cardio'], gear: gear ? gear.split(' ') : [], type: 'cardio', cardio: true,
   dist, defaultMin: min, cue, default1RM: 0, reps: 0, sets: 0, noE1: true, alias: alias || ''
 });
+
+/* ---------- how much each exercise really works each muscle ----------
+   1 = the main target; the rest are shares of that (0.5 = about half as hard).
+   Recovery, weekly-set counts and the heatmap all use these, so a squat taxes glutes and hamstrings too,
+   and an upright row counts mainly as a traps (Back) exercise with some shoulder work. */
+const MUSCLE_FIX = {
+  bb_bench: 'Chest:1 Triceps:.5 Shoulders:.45', incline_bb_bench: 'Chest:1 Shoulders:.55 Triceps:.45', db_press: 'Chest:1 Triceps:.45 Shoulders:.4',
+  incline_db_press: 'Chest:1 Shoulders:.55 Triceps:.4', machine_chest_press: 'Chest:1 Triceps:.45 Shoulders:.35', cable_fly: 'Chest:1 Shoulders:.15',
+  pushups: 'Chest:1 Triceps:.5 Shoulders:.4 Core:.25', dips: 'Chest:1 Triceps:.6 Shoulders:.4', decline_bb_bench: 'Chest:1 Triceps:.55 Shoulders:.3',
+  decline_db_press: 'Chest:1 Triceps:.5 Shoulders:.25', db_chest_fly: 'Chest:1 Shoulders:.25', low_high_cable_fly: 'Chest:1 Shoulders:.3', high_low_cable_fly: 'Chest:1 Shoulders:.15',
+  floor_press: 'Chest:1 Triceps:.55 Shoulders:.3', landmine_chest_press: 'Chest:1 Triceps:.4 Shoulders:.4 Core:.25',
+  ohp: 'Shoulders:1 Triceps:.5 Chest:.25 Core:.2', db_shoulder_press: 'Shoulders:1 Triceps:.45 Chest:.2', arnold_press: 'Shoulders:1 Triceps:.4 Chest:.2',
+  db_lat_raise: 'Shoulders:1 Back:.15', cable_lat_raise: 'Shoulders:1', db_front_raise: 'Shoulders:1 Chest:.2', cable_egyptian_raise: 'Shoulders:1',
+  landmine_press: 'Shoulders:1 Chest:.4 Triceps:.3 Core:.25',
+  face_pull: 'Shoulders:1 Back:.6', rear_delt_fly: 'Shoulders:1 Back:.55', cable_y_raise: 'Shoulders:1 Back:.5', face_pull_press: 'Shoulders:1 Back:.5 Triceps:.25',
+  /* traps are part of the back: upright rows and shrugs are Back exercises with some shoulder work */
+  bb_upright_row: 'Back:1 Shoulders:.45 Biceps:.15', cable_upright_row: 'Back:1 Shoulders:.45 Biceps:.15', bb_shrug: 'Back:1 Shoulders:.25', db_shrug: 'Back:1 Shoulders:.25',
+  bb_row: 'Back:1 Biceps:.45 Shoulders:.3 Core:.2 Hamstrings:.15', pendlay_row: 'Back:1 Biceps:.4 Shoulders:.3 Core:.15', pullups: 'Back:1 Biceps:.55 Shoulders:.2 Core:.2',
+  db_row: 'Back:1 Biceps:.4 Shoulders:.25', lat_pulldown: 'Back:1 Biceps:.45 Shoulders:.15', seated_cable_row: 'Back:1 Biceps:.4 Shoulders:.25',
+  tbar_row: 'Back:1 Biceps:.4 Shoulders:.25 Core:.2', cs_db_row: 'Back:1 Biceps:.4 Shoulders:.3', straight_arm_pulldown: 'Back:1 Triceps:.2 Core:.15',
+  meadows_row: 'Back:1 Biceps:.4 Shoulders:.25', inverted_row: 'Back:1 Biceps:.45 Core:.25 Shoulders:.2', rack_pull: 'Back:1 Glutes:.4 Hamstrings:.35 Core:.3',
+  deadlift: 'Back:1 Hamstrings:.6 Glutes:.6 Core:.35 Quads:.25', superman: 'Back:1 Glutes:.45 Hamstrings:.2',
+  farmers_walk: 'Back:1 Core:.5 Shoulders:.3 Biceps:.2',
+  bb_squat: 'Quads:1 Glutes:.6 Hamstrings:.3 Core:.25 Calves:.15', front_squat: 'Quads:1 Glutes:.45 Core:.35 Hamstrings:.2', bulgarian_split: 'Quads:1 Glutes:.6 Hamstrings:.3 Calves:.1',
+  goblet_squat: 'Quads:1 Glutes:.5 Core:.3 Hamstrings:.2', leg_press: 'Quads:1 Glutes:.5 Hamstrings:.25', leg_extension: 'Quads:1',
+  walking_lunge: 'Quads:1 Glutes:.6 Hamstrings:.3 Calves:.1', bw_squat: 'Quads:1 Glutes:.5 Hamstrings:.2 Core:.15', box_squat: 'Quads:1 Glutes:.6 Hamstrings:.35 Core:.25',
+  zercher_squat: 'Quads:1 Glutes:.5 Core:.4 Back:.35', hack_squat: 'Quads:1 Glutes:.45 Hamstrings:.15', heel_goblet_squat: 'Quads:1 Core:.3 Glutes:.3',
+  db_step_up: 'Quads:1 Glutes:.55 Hamstrings:.2', sissy_squat: 'Quads:1',
+  rdl: 'Hamstrings:1 Glutes:.7 Back:.35 Core:.2', db_rdl: 'Hamstrings:1 Glutes:.7 Back:.3 Core:.15', good_morning: 'Hamstrings:1 Glutes:.6 Back:.5 Core:.2',
+  sl_db_rdl: 'Hamstrings:1 Glutes:.65 Core:.3 Back:.2', leg_curl: 'Hamstrings:1 Glutes:.25 Calves:.2', seated_leg_curl: 'Hamstrings:1 Glutes:.15 Calves:.2',
+  nordic_curl: 'Hamstrings:1 Glutes:.3 Core:.2', ghr: 'Hamstrings:1 Glutes:.5 Calves:.25 Back:.2',
+  bb_hip_thrust: 'Glutes:1 Hamstrings:.4 Quads:.15 Core:.15', glute_bridge: 'Glutes:1 Hamstrings:.4 Core:.1', sl_hip_thrust: 'Glutes:1 Hamstrings:.4 Core:.2',
+  cable_kickback: 'Glutes:1 Hamstrings:.2', cable_pull_through: 'Glutes:1 Hamstrings:.5 Core:.2', deficit_reverse_lunge: 'Glutes:1 Quads:.55 Hamstrings:.35',
+  db_sumo_squat: 'Glutes:1 Quads:.6 Hamstrings:.25', curtsy_lunge: 'Glutes:1 Quads:.55 Core:.15',
+  cgbp: 'Triceps:1 Chest:.55 Shoulders:.3', bench_dips: 'Triceps:1 Chest:.35 Shoulders:.4', jm_press: 'Triceps:1 Chest:.4 Shoulders:.25',
+  ab_rollout: 'Core:1 Shoulders:.3 Back:.25', plank: 'Core:1 Shoulders:.25 Glutes:.2', side_plank: 'Core:1 Glutes:.3', pallof_press: 'Core:1 Shoulders:.25',
+  cable_woodchop: 'Core:1 Shoulders:.3', dragon_flag: 'Core:1 Back:.3 Shoulders:.2'
+};
+/* sessions only pull from exercises that belong to that day (hamstring/glute work no longer shows up in a Pull day) */
+const SPLIT_FIX = {
+  bb_upright_row: 'pull upper full', cable_upright_row: 'pull upper full', cable_y_raise: 'pull upper full',
+  rdl: 'legs lower full', db_rdl: 'legs lower full', good_morning: 'legs lower full', sl_db_rdl: 'legs lower full'
+};
+BASE_EX.forEach(ex => {
+  const f = MUSCLE_FIX[ex.id];
+  if (f) {
+    const w = {}; f.split(' ').forEach(p => { const [m, v] = p.split(':'); w[m] = +v; });
+    const ord = Object.keys(w).sort((a, b) => w[b] - w[a]);
+    ex.primary = ord[0]; ex.secondary = ord.slice(1); ex.mw = w;
+  }
+  if (SPLIT_FIX[ex.id]) ex.split = SPLIT_FIX[ex.id].split(' ');
+});
+const exW = ex => ex.mw || (() => { const w = { [ex.primary]: 1 }; (ex.secondary || []).forEach(m => { if (m !== ex.primary) w[m] = .5; }); return w; })();
+const itemW = i => i.mw || (() => { const w = { [i.p]: 1 }; (i.s || []).forEach(m => { if (m !== i.p) w[m] = .5; }); return w; })();
+const exFresh = ex => { const w = exW(ex); let a = 0, b = 0; for (const m in w) if (state.muscles[m]) { a += w[m] * state.muscles[m].recovery; b += w[m]; } return b ? a / b : 100; };
 const CARDIO_EX = [
   C('cardio_run', 'Run (Outdoor / Treadmill)', '', true, 20, 'Easy conversational pace, or intervals if you prefer.', 'run jog'),
   C('cardio_walk', 'Walk / Incline Walk', '', true, 30, 'Brisk pace, swing your arms.', 'walk'),
@@ -413,8 +468,8 @@ function applySetDone(it, s, ex) {
   if (s.type === 'warmup') return null;
   const rm = (s.fail || s.rir <= 0) ? 1.25 : 1, dm = s.type === 'drop' ? .6 : 1;
   s.fx = {};
-  if (state.muscles[ex.primary]) s.fx[ex.primary] = Math.round(6 * rm * dm);
-  (ex.secondary || []).forEach(m => { if (state.muscles[m]) s.fx[m] = (s.fx[m] || 0) + Math.round(3 * rm * dm); });
+  const W = exW(ex);
+  for (const m in W) if (state.muscles[m]) s.fx[m] = Math.max(1, Math.round(6 * W[m] * rm * dm));   // primary ≈ 6 points per set, others in proportion
   const now = Date.now();
   for (const m in s.fx) { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery - s.fx[m], 0, 100); mu.lastTrained = now; }
   let pr = null;

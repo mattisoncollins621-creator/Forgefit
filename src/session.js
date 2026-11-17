@@ -174,7 +174,7 @@ A.finish = () => {
       if (s.type !== 'warmup') { sets++; vol += setVol(ex, s); }
       if (s.pr) { const e = Math.round(est1(ex, s)), cur = prMap.get(ex.id); if (!cur || e > cur.now) prMap.set(ex.id, { name: ex.name, w: loadOf(ex, s), r: +s.reps || 0, now: e, prev: s.prevPR ? s.prevPR.e1rm : null }); }
     });
-    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], sets: done.map(s => ({ w: +s.weight || 0, r: +s.reps || 0, rir: +s.rir || 0, fail: !!s.fail, type: s.type || 'work', pct: s.pct ?? null })) });
+    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], mw: exW(ex), sets: done.map(s => ({ w: +s.weight || 0, r: +s.reps || 0, rir: +s.rir || 0, fail: !!s.fail, type: s.type || 'work', pct: s.pct ?? null })) });
     if (!ex.noE1) { const best = Math.max(0, ...done.filter(s => s.type === 'work').map(s => est1(ex, s))); if (best > 0) { (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []).push({ t: now, v: Math.round(best) }); if (state.e1rmHist[ex.id].length > 400) state.e1rmHist[ex.id].shift(); } }
   });
   const dur = w.startedAt ? Math.max(1, Math.round(sessMs(now) / 6e4)) : 0;

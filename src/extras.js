@@ -270,8 +270,7 @@ function weeklySets(nw = 4) {
     if (!h.t) return; const k = Math.floor((now - h.t) / (7 * DAY)); if (k < 0 || k >= nw) return; const col = nw - 1 - k;
     (h.items || []).forEach(i => i.sets.forEach(s => {
       if (s.type === 'warmup') return;
-      if (out[i.p]) out[i.p][col] += 1;
-      (i.s || []).forEach(m => { if (out[m]) out[m][col] += .5; });
+      const W = itemW(i); for (const m in W) if (out[m]) out[m][col] += W[m];
     }));
   });
   return out;
@@ -496,7 +495,7 @@ A.exInfo = el => {
   const q = encodeURIComponent(ex.name.replace(/\s*\((?:Total|Added Wt|Bars \/ Chairs|seconds)[^)]*\)/gi, '') + ' proper form');
   const missing = (ex.gear || []).filter(g => !state.gear[g]);
   openSheet(ex.name, `<div class="col">
-    <div class="row gap6 wrap"><span class="tag or">${esc(ex.primary)}</span>${(ex.secondary || []).map(m => `<span class="tag">${esc(m)}</span>`).join('')}<span class="tag">${ex.cardio ? 'Cardio' : esc(ex.type)}</span></div>
+    <div class="row gap6 wrap"><span class="tag or">${esc(ex.primary)}</span>${(ex.secondary || []).map(m => { const w = exW(ex)[m]; return `<span class="tag">${esc(m)}${w && w !== .5 ? ' ' + Math.round(w * 100) + '%' : ''}</span>`; }).join('')}<span class="tag">${ex.cardio ? 'Cardio' : esc(ex.type)}</span></div>
     <p class="mut sm">${ex.gear.length ? 'Equipment: ' + esc(ex.gear.map(gearLabel).join(', ')) : 'No equipment needed'}${missing.length ? ` · <span class="am">you have ${esc(missing.map(gearLabel).join(', '))} switched off</span>` : ''}</p>
     <ol class="how">${steps.map((t, k) => `<li><b>${steps.length > 1 ? labels[k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol>
     ${ex.cardio ? '' : `<div class="prow static"><div class="grow"><b>Your numbers</b><div class="mut xs">${state.e1rm[ex.id] ? 'Estimated 1RM ' + state.e1rm[ex.id] + ' ' + unit() : 'No estimate yet'}${pr ? ' · best ' + Math.round(pr.weight) + ' × ' + pr.reps : ''}${l ? ' · last ' + l.slice(0, 4).map(s => s.w + '×' + s.r).join(', ') : ''}</div></div></div>`}

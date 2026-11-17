@@ -85,18 +85,37 @@ function normSS() {
     if (!ok) idx.forEach(i => it[i].superset = null);
   });
 }
+/* Which muscles belong to which training day. An exercise is only auto-picked for a day if its main muscle is
+   on that day AND it doesn't lean hard (50%+) on muscles from another day, so no hamstring or glute work in Pull. */
+const DAY_MUSCLES = { push: ['Chest', 'Shoulders', 'Triceps'], pull: ['Back', 'Biceps'], legs: ['Quads', 'Hamstrings', 'Glutes', 'Calves'] };
+const DAY_ALLOW = { push: ['Chest', 'Shoulders', 'Triceps', 'Core'], pull: ['Back', 'Biceps', 'Shoulders', 'Core'], legs: ['Quads', 'Hamstrings', 'Glutes', 'Calves', 'Core'] };
+DAY_ALLOW.upper = [...new Set([...DAY_ALLOW.push, ...DAY_ALLOW.pull])]; DAY_ALLOW.lower = DAY_ALLOW.legs;
+function fitsDay(ex, sp) {
+  if (!ex.split.includes(sp)) return false;
+  const A = DAY_ALLOW[sp]; if (!A) return true; const w = exW(ex);
+  return A.includes(ex.primary) && Object.keys(w).every(m => A.includes(m) || w[m] < .5);
+}
+const dayPool = sp => allEx().filter(e => !e.cardio && !e.noGen && hasGear(e) && fitsDay(e, sp));
+/* "Smart": pick the whole training day (push / pull / legs) whose muscles are most recovered and longest untrained */
+function smartDay() {
+  const now = Date.now();
+  const ranked = Object.keys(DAY_MUSCLES).map(d => {
+    const ms = DAY_MUSCLES[d], fresh = ms.reduce((a, m) => a + state.muscles[m].recovery, 0) / ms.length;
+    const last = Math.max(0, ...ms.map(m => state.muscles[m].lastTrained || 0)), idle = last ? Math.min(7, (now - last) / DAY) : 7;
+    return { d, fresh, sc: fresh + idle * 1.5, ms };
+  }).sort((a, b) => b.sc - a.sc);
+  return ranked.find(r => dayPool(r.d).length) || ranked[0];
+}
 function generateWorkout(quiet) {
   updatePassiveRecovery();
-  const p = state.profile, g = GOALS[p.goal] || GOALS.muscle, dl = isDeload(), sp = resolveSplit();
-  let pool = allEx().filter(e => !e.cardio && !e.noGen && hasGear(e));
-  if (sp === 'freshness') {
-    const top = [...MUSCLES].sort((a, b) => state.muscles[b].recovery - state.muscles[a].recovery).slice(0, 4);
-    pool = pool.filter(e => top.includes(e.primary));
-  } else pool = pool.filter(e => e.split.includes(sp));
+  const p = state.profile, g = GOALS[p.goal] || GOALS.muscle, dl = isDeload();
+  let sp = resolveSplit(), smart = null;
+  if (sp === 'freshness') { smart = smartDay(); sp = smart.d; }
+  let pool = dayPool(sp);
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
   if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
-  const scored = pool.map(ex => ({ ex, sc: rec(ex.primary) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
+  const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
   const sel = [], cnt = {};
   for (const cap of [1, 2]) for (const { ex } of scored) {
@@ -106,7 +125,7 @@ function generateWorkout(quiet) {
   }
   const rank = { compound: 0, bodyweight: 1, isolation: 2 };
   sel.sort((a, b) => rank[a.type] - rank[b.type]);
-  const av = sel.reduce((a, e) => a + rec(e.primary), 0) / sel.length;
+  const av = sel.reduce((a, e) => a + exFresh(e), 0) / sel.length;
   let f = av < 55 ? .9 : av < 75 ? .95 : 1; if (dl) f *= .9;
   const items = sel.map(ex => {
     const comp = ex.type === 'compound', fixed = ex.bw !== undefined || ex.custom;
@@ -121,6 +140,7 @@ function generateWorkout(quiet) {
     if (pick) items.push(buildItem(pick, { min: p.sessionMin >= 75 ? 20 : 12 }));
   }
   const strength = items.filter(i => !i.cardio), pre = strength.filter(i => prefillFrom(exById(i.exId))).length, bits = [], bi = blockInfo();
+  if (smart) bits.push(`Smart pick: ${SPLIT_NAME[sp]} day, ${smart.ms.map(m => m.toLowerCase()).join(', ')} ${smart.fresh > 85 ? 'are fresh' : 'are the most recovered'}`);
   if (dl) bits.push('Deload week');
   if (bi && !bi.done && !bi.deload) bits.push(`Block week ${bi.week} of ${bi.weeks}`);
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');

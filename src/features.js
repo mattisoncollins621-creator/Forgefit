@@ -248,7 +248,7 @@ function logQLPast(list, t) {      // saved straight to history on the chosen da
       out.push({ w: +r.w || 0, r: +r.r || 0, rir: +(r.rir ?? 2), fail: !!r.fail, type: 'work', pct: s.pct ?? null });
       sets++; vol += setVol(ex, s); if (s.pr) prs++;
     }
-    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], sets: out });
+    items.push({ exId: ex.id, name: ex.name, p: ex.primary, s: ex.secondary || [], mw: exW(ex), sets: out });
     if (best > 0) { const h = (state.e1rmHist[ex.id] = state.e1rmHist[ex.id] || []); h.push({ t, v: Math.round(best) }); h.sort((a, b) => a.t - b.t); }
   });
   touched.forEach(m => { const mu = state.muscles[m]; mu.recovery = clamp(mu.recovery + hrs * 1.25, 0, 100); mu.lastTrained = Math.max(prevLast[m], t); });   // fatigue from that day has partly recovered
@@ -411,8 +411,8 @@ function heatData(days) {
     const idx = Math.round((d0 - sod(h.t)) / DAY); if (idx < 0 || idx >= days) return; const col = days - 1 - idx;
     (h.items || []).forEach(i => i.sets.forEach(s => {
       if (s.type === 'warmup') return;
-      if (out[i.p]) { out[i.p][col].sets += 1; if (s.pct) out[i.p][col].pcts.push(s.pct); }
-      (i.s || []).forEach(m => { if (out[m]) out[m][col].sets += .5; });
+      const W = itemW(i); for (const m in W) if (out[m]) out[m][col].sets += W[m];
+      if (out[i.p] && s.pct) out[i.p][col].pcts.push(s.pct);
     }));
   });
   return out;
@@ -438,7 +438,7 @@ function renderProgress() {
       : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
     ${bodyVsStrength()}
     <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="segp"><button class="${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
-      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day (secondary muscles count half).' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
+      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day (secondary muscles count in proportion to how much they work).' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
       <div class="heat">${MUSCLES.map(m => `<div class="hrow"><span>${m}</span><div class="hcells">${hd[m].map(cell).join('')}</div></div>`).join('')}</div>
       <div class="row sp mut xs"><span>${fmtDate(now - (days - 1) * DAY)}</span><span>Today</span></div></div>
     <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The green band is your target range for your goal and experience. Bars show the last 7 days; the mini chart is the last 4 weeks, oldest to newest.</p>

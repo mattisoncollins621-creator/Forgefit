@@ -117,7 +117,7 @@ const H = require('./h'); const { chromium } = require('playwright'); const fs =
     await page.evaluate(() => { state.prs = window.__p; }); await page.click('#sheet .ib[data-a=closeSheet]');
 
     console.log('== I7 weekly recap');
-    await page.evaluate(() => { state.seen = { v4: true, v8: true }; renderWorkout(); }); await page.click('#nav-workout');
+    await page.evaluate(() => { state.seen = { v4: true, v8: true }; state.nudgeSnooze = Date.now() + 864e5; renderWorkout(); }); await page.click('#nav-workout');   // keep a date-dependent volume nudge from crowding out the recap
     const lw = await page.evaluate(() => { const cur = weekStartOf(Date.now()), hs = state.history.filter(h => h.t >= cur - 7 * DAY && h.t < cur); return { n: hs.length, sets: hs.reduce((a, h) => a + h.sets, 0), vol: Math.round(hs.reduce((a, h) => a + h.vol, 0)), days: new Set(hs.map(h => ymd(h.t))).size, prs: hs.reduce((a, h) => a + h.prs, 0) }; });
     const wt = await page.locator('#tab-workout').innerText();
     H.check('Workout shows the "week in review" banner with last week’s numbers', /Your week in review/.test(wt) && wt.includes(`${lw.n} sessions · ${lw.sets} sets · ${lw.vol.toLocaleString()} lb`), { lw, wt: wt.slice(0, 300) });

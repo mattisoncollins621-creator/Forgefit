@@ -139,7 +139,7 @@ function weekStats(ws) {
   let sets = 0, vol = 0, prs = 0; const days = new Set(), mus = {}; MUSCLES.forEach(m => mus[m] = 0);
   hs.forEach(h => {
     sets += h.sets || 0; vol += (h.vol || 0) * f(h.unit); prs += h.prs || 0; days.add(ymd(h.t));
-    (h.items || []).forEach(i => (i.sets || []).forEach(s => { if (s.type === 'warmup') return; if (mus[i.p] != null) mus[i.p] += 1; (i.s || []).forEach(m => { if (mus[m] != null) mus[m] += .5; }); }));
+    (h.items || []).forEach(i => (i.sets || []).forEach(s => { if (s.type === 'warmup') return; const W = itemW(i); for (const m in W) if (mus[m] != null) mus[m] += W[m]; }));
   });
   return { sessions: hs.length, days: days.size, sets, vol: Math.round(vol), prs, mus };
 }
