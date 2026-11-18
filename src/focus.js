@@ -39,7 +39,7 @@ function focusHtml() {
   const s = it.sets[j], last = lastPerf(ex.id), ph = last && last[Math.min(j, last.length - 1)], pct = rec(ex.primary);
   let wn = 0; const lbls = it.sets.map(x => x.type === 'warmup' ? 'W' : x.type === 'drop' ? 'D' : String(++wn)), work = wn;
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
-  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
+  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
   const setList = it.sets.map((x, k) => `<button class="fs ${k === j ? 'on' : ''} ${x.done ? 'done' : ''} t-${x.type}" data-a="fPick" data-i="${i}" data-j="${k}"><span class="fsn">${lbls[k]}</span><span class="fsv">${x.weight || '–'}<i>×</i>${x.reps || '–'}</span>${x.done ? ic('check', 'sm') : ''}</button>`).join('');
   const what = s.type === 'warmup' ? 'Warm-up set' : s.type === 'drop' ? 'Drop set' : `Set ${lbls[j]} of ${work}`;
   return `<div class="card focus${sessPaused() ? ' dimmed' : ''}" id="focus" data-i="${i}">${nav}

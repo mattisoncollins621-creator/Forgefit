@@ -138,25 +138,42 @@ function generateWorkout(quiet) {
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
   if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
-  const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
+  /* weekly set targets: muscles behind on this week's sets get priority and an extra set, muscles already at the
+     top of their range are skipped (main lifts stay but drop to 2 sets). Needs a little history to be meaningful. */
+  const now = Date.now(), useT = !dl && state.history.filter(h => h.t > now - 14 * DAY && (h.items || []).length).length >= 2;
+  const ws = weeklySets(1), done = m => (ws[m] ? ws[m][0] : 0), tgt = {}; MUSCLES.forEach(m => tgt[m] = setTarget(m));
+  const planned = {}; MUSCLES.forEach(m => planned[m] = 0);
+  const room = m => tgt[m][1] - done(m) - planned[m], short = m => tgt[m][0] - done(m) - planned[m];
+  const tBonus = ex => !useT ? 0 : clamp((tgt[ex.primary][0] - done(ex.primary)) / tgt[ex.primary][0], 0, 1) * 12 - (done(ex.primary) >= tgt[ex.primary][1] ? 30 : 0);
+  const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) + tBonus(ex) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
-  const anchors = anchorsFor(sp, scored).slice(0, maxEx), sel = [...anchors], cnt = {};
-  anchors.forEach(ex => cnt[ex.primary] = (cnt[ex.primary] || 0) + 1);
-  for (const cap of [1, 2]) for (const { ex } of scored) {
-    if (sel.length >= maxEx) break;
+  const av0 = scored.slice(0, maxEx).reduce((a, s) => a + exFresh(s.ex), 0) / Math.max(1, Math.min(maxEx, scored.length));
+  const baseN = ex => { const comp = ex.type === 'compound', fixed = ex.bw !== undefined || ex.custom; let n = fixed ? ex.sets : (comp ? g.cSets : g.iSets); if (p.experience === 'beginner') n = Math.min(n, 3); if (dl) n = Math.max(2, Math.ceil(n * .6)); else if (av0 < 55) n = Math.max(2, n - 1); return n; };
+  const nSets = {}, boosted = new Set(), capped = new Set(), skipped = new Set();
+  const size = (ex, isMain) => {                     // how many sets this exercise gets, given what the week still needs
+    let n = baseN(ex); const m = ex.primary;
+    if (useT) {
+      if (room(m) <= 0) { n = 2; capped.add(m); }
+      else if (room(m) < n) { n = Math.max(2, Math.ceil(room(m))); capped.add(m); }
+      else if (short(m) >= 3 && n < 5) { n += 1; boosted.add(m); }   // 3+ sets short of the bottom of the range
+    }
+    const W = exW(ex); for (const k in W) if (planned[k] != null) planned[k] += n * W[k];
+    nSets[ex.id] = n; return n;
+  };
+  const anchors = anchorsFor(sp, scored).slice(0, maxEx), sel = [], cnt = {};
+  anchors.forEach(ex => { sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1; size(ex, true); });
+  for (const strict of [true, false]) for (const cap of [1, 2]) for (const { ex } of scored) {
+    if (sel.length >= maxEx || (!strict && sel.length >= 3)) break;
     if (sel.includes(ex) || (cnt[ex.primary] || 0) >= cap) continue;
-    sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1;
+    if (strict && useT && room(ex.primary) < 1) { skipped.add(ex.primary); continue; }   // already at the top of its weekly range
+    sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1; size(ex, false);
   }
   const rank = { compound: 0, bodyweight: 1, isolation: 2 };
   sel.sort((a, b) => (anchors.includes(b) - anchors.includes(a)) || rank[a.type] - rank[b.type]);
   const av = sel.reduce((a, e) => a + exFresh(e), 0) / sel.length;
   let f = av < 55 ? .9 : av < 75 ? .95 : 1; if (dl) f *= .9;
   const items = sel.map(ex => {
-    const comp = ex.type === 'compound', fixed = ex.bw !== undefined || ex.custom;
-    let n = fixed ? ex.sets : (comp ? g.cSets : g.iSets);
-    if (p.experience === 'beginner') n = Math.min(n, 3);
-    if (dl) n = Math.max(2, Math.ceil(n * .6)); else if (av < 55) n = Math.max(2, n - 1);
-    const it = buildItem(ex, { factor: f, sets: n, rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
+    const it = buildItem(ex, { factor: f, sets: nSets[ex.id], rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
     if (anchors.includes(ex)) it.main = true;
     return it;
   });
@@ -168,6 +185,13 @@ function generateWorkout(quiet) {
   const strength = items.filter(i => !i.cardio), pre = strength.filter(i => prefillFrom(exById(i.exId))).length, bits = [], bi = blockInfo();
   if (smart) bits.push(`Smart pick: ${SPLIT_NAME[sp]} day, ${smart.ms.map(m => m.toLowerCase()).join(', ')} ${smart.fresh > 85 ? 'are fresh' : 'are the most recovered'}`);
   if (anchors.length) bits.push(`Main lifts for this ${state.block && state.block.start ? 'block' : '4-week stretch'}: ${anchors.map(e => e.name.replace(/\s*\(.*?\)/g, '')).join(', ')}`);
+  if (useT) {
+    const hit = new Set(sel.map(e => e.primary)), f1 = m => `${m.toLowerCase()} ${fmtN(done(m))}/${tgt[m][0]}–${tgt[m][1]}`;
+    const behind = [...boosted].filter(m => hit.has(m)), over = [...new Set([...skipped, ...capped])].filter(m => done(m) >= tgt[m][1]);
+    if (behind.length) bits.push(`Extra sets where you're behind this week: ${behind.slice(0, 3).map(f1).join(', ')}`);
+    if (over.length) bits.push(`Already at target this week, kept light: ${over.slice(0, 3).map(f1).join(', ')}`);
+  }
+  const nNew = sel.filter(isNewLift).length; if (nNew) bits.push(`${nNew} new lift${nNew === 1 ? '' : 's'}: tap "find your working weight" for an accurate start`);
   if (dl) bits.push('Deload week');
   if (bi && !bi.done && !bi.deload) bits.push(`Block week ${bi.week} of ${bi.weeks}`);
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');
@@ -228,7 +252,7 @@ function cardHtml(i) {
       <button class="chk ${s.done ? 'on' : ''}" data-a="toggleSet" data-i="${i}" data-j="${j}" aria-label="Log set">${s.done ? ic('check') : ''}</button></div></div>`;
   }).join('');
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
-  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
+  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
   const canWarm = state.settings.warmups && ex.type === 'compound' && !ex.noE1 && !ex.bw && !it.sets.some(s => s.type === 'warmup');
   return `<article class="card ex" data-ex="${i}">
     <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${mainTag(it)}${ss}</div>

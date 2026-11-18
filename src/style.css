@@ -785,3 +785,15 @@ input.rs{-webkit-appearance:none;appearance:none;display:block;width:100%;height
 .fdone{margin-top:14px}
 .srow.cur{box-shadow:0 0 0 1.5px rgba(249,115,22,.7) inset;border-radius:12px}
 #toast:not(:has(button)){pointer-events:none}
+
+/* calibration (v15) */
+.coach.cal{color:var(--or-t);background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.25)}
+.cal .calname{font-size:17px;font-weight:700;color:var(--tx)}
+.cal .fset{margin-top:4px}
+.cal .btn[disabled]{opacity:.45}
+.calhist{display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.calrow{display:flex;gap:10px;align-items:center;padding:9px 12px;font-size:13.5px;border-top:1px solid var(--bd)}
+.calrow:first-child{border-top:0}.calrow b{flex:1;font-weight:600;color:var(--tx)}
+.calres{display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 12px;border-radius:16px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25)}
+.calres b{font-size:34px;font-weight:700;letter-spacing:-.02em;color:var(--tx);line-height:1.1;margin:4px 0}
+.calres span:last-child{font-size:13px;color:var(--mut)}

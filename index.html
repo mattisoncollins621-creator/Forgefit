@@ -800,6 +800,18 @@ input.rs{-webkit-appearance:none;appearance:none;display:block;width:100%;height
 .fdone{margin-top:14px}
 .srow.cur{box-shadow:0 0 0 1.5px rgba(249,115,22,.7) inset;border-radius:12px}
 #toast:not(:has(button)){pointer-events:none}
+
+/* calibration (v15) */
+.coach.cal{color:var(--or-t);background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.25)}
+.cal .calname{font-size:17px;font-weight:700;color:var(--tx)}
+.cal .fset{margin-top:4px}
+.cal .btn[disabled]{opacity:.45}
+.calhist{display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.calrow{display:flex;gap:10px;align-items:center;padding:9px 12px;font-size:13.5px;border-top:1px solid var(--bd)}
+.calrow:first-child{border-top:0}.calrow b{flex:1;font-weight:600;color:var(--tx)}
+.calres{display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 12px;border-radius:16px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25)}
+.calres b{font-size:34px;font-weight:700;letter-spacing:-.02em;color:var(--tx);line-height:1.1;margin:4px 0}
+.calres span:last-child{font-size:13px;color:var(--mut)}
 </style>
 </head>
 <body>
@@ -878,7 +890,7 @@ const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const APP_VER = '14';   // filled in by build.py from sw.js so the two can never disagree
+const APP_VER = '15';   // filled in by build.py from sw.js so the two can never disagree
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- exercise database ---------- */
@@ -1598,25 +1610,42 @@ function generateWorkout(quiet) {
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
   if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
-  const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) })).sort((a, b) => b.sc - a.sc);
+  /* weekly set targets: muscles behind on this week's sets get priority and an extra set, muscles already at the
+     top of their range are skipped (main lifts stay but drop to 2 sets). Needs a little history to be meaningful. */
+  const now = Date.now(), useT = !dl && state.history.filter(h => h.t > now - 14 * DAY && (h.items || []).length).length >= 2;
+  const ws = weeklySets(1), done = m => (ws[m] ? ws[m][0] : 0), tgt = {}; MUSCLES.forEach(m => tgt[m] = setTarget(m));
+  const planned = {}; MUSCLES.forEach(m => planned[m] = 0);
+  const room = m => tgt[m][1] - done(m) - planned[m], short = m => tgt[m][0] - done(m) - planned[m];
+  const tBonus = ex => !useT ? 0 : clamp((tgt[ex.primary][0] - done(ex.primary)) / tgt[ex.primary][0], 0, 1) * 12 - (done(ex.primary) >= tgt[ex.primary][1] ? 30 : 0);
+  const scored = pool.map(ex => ({ ex, sc: exFresh(ex) * .8 + Math.random() * 15 - (recent.has(ex.id) ? 12 : 0) + (ex.type === 'compound' ? 4 : 0) + tBonus(ex) })).sort((a, b) => b.sc - a.sc);
   const maxEx = clamp(Math.round(p.sessionMin / 12), 3, 8) - (p.experience === 'beginner' ? 1 : 0);
-  const anchors = anchorsFor(sp, scored).slice(0, maxEx), sel = [...anchors], cnt = {};
-  anchors.forEach(ex => cnt[ex.primary] = (cnt[ex.primary] || 0) + 1);
-  for (const cap of [1, 2]) for (const { ex } of scored) {
-    if (sel.length >= maxEx) break;
+  const av0 = scored.slice(0, maxEx).reduce((a, s) => a + exFresh(s.ex), 0) / Math.max(1, Math.min(maxEx, scored.length));
+  const baseN = ex => { const comp = ex.type === 'compound', fixed = ex.bw !== undefined || ex.custom; let n = fixed ? ex.sets : (comp ? g.cSets : g.iSets); if (p.experience === 'beginner') n = Math.min(n, 3); if (dl) n = Math.max(2, Math.ceil(n * .6)); else if (av0 < 55) n = Math.max(2, n - 1); return n; };
+  const nSets = {}, boosted = new Set(), capped = new Set(), skipped = new Set();
+  const size = (ex, isMain) => {                     // how many sets this exercise gets, given what the week still needs
+    let n = baseN(ex); const m = ex.primary;
+    if (useT) {
+      if (room(m) <= 0) { n = 2; capped.add(m); }
+      else if (room(m) < n) { n = Math.max(2, Math.ceil(room(m))); capped.add(m); }
+      else if (short(m) >= 3 && n < 5) { n += 1; boosted.add(m); }   // 3+ sets short of the bottom of the range
+    }
+    const W = exW(ex); for (const k in W) if (planned[k] != null) planned[k] += n * W[k];
+    nSets[ex.id] = n; return n;
+  };
+  const anchors = anchorsFor(sp, scored).slice(0, maxEx), sel = [], cnt = {};
+  anchors.forEach(ex => { sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1; size(ex, true); });
+  for (const strict of [true, false]) for (const cap of [1, 2]) for (const { ex } of scored) {
+    if (sel.length >= maxEx || (!strict && sel.length >= 3)) break;
     if (sel.includes(ex) || (cnt[ex.primary] || 0) >= cap) continue;
-    sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1;
+    if (strict && useT && room(ex.primary) < 1) { skipped.add(ex.primary); continue; }   // already at the top of its weekly range
+    sel.push(ex); cnt[ex.primary] = (cnt[ex.primary] || 0) + 1; size(ex, false);
   }
   const rank = { compound: 0, bodyweight: 1, isolation: 2 };
   sel.sort((a, b) => (anchors.includes(b) - anchors.includes(a)) || rank[a.type] - rank[b.type]);
   const av = sel.reduce((a, e) => a + exFresh(e), 0) / sel.length;
   let f = av < 55 ? .9 : av < 75 ? .95 : 1; if (dl) f *= .9;
   const items = sel.map(ex => {
-    const comp = ex.type === 'compound', fixed = ex.bw !== undefined || ex.custom;
-    let n = fixed ? ex.sets : (comp ? g.cSets : g.iSets);
-    if (p.experience === 'beginner') n = Math.min(n, 3);
-    if (dl) n = Math.max(2, Math.ceil(n * .6)); else if (av < 55) n = Math.max(2, n - 1);
-    const it = buildItem(ex, { factor: f, sets: n, rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
+    const it = buildItem(ex, { factor: f, sets: nSets[ex.id], rir: clamp(g.rir + blockRirAdj() + (dl ? 1 : 0), 0, 4) });
     if (anchors.includes(ex)) it.main = true;
     return it;
   });
@@ -1628,6 +1657,13 @@ function generateWorkout(quiet) {
   const strength = items.filter(i => !i.cardio), pre = strength.filter(i => prefillFrom(exById(i.exId))).length, bits = [], bi = blockInfo();
   if (smart) bits.push(`Smart pick: ${SPLIT_NAME[sp]} day, ${smart.ms.map(m => m.toLowerCase()).join(', ')} ${smart.fresh > 85 ? 'are fresh' : 'are the most recovered'}`);
   if (anchors.length) bits.push(`Main lifts for this ${state.block && state.block.start ? 'block' : '4-week stretch'}: ${anchors.map(e => e.name.replace(/\s*\(.*?\)/g, '')).join(', ')}`);
+  if (useT) {
+    const hit = new Set(sel.map(e => e.primary)), f1 = m => `${m.toLowerCase()} ${fmtN(done(m))}/${tgt[m][0]}–${tgt[m][1]}`;
+    const behind = [...boosted].filter(m => hit.has(m)), over = [...new Set([...skipped, ...capped])].filter(m => done(m) >= tgt[m][1]);
+    if (behind.length) bits.push(`Extra sets where you're behind this week: ${behind.slice(0, 3).map(f1).join(', ')}`);
+    if (over.length) bits.push(`Already at target this week, kept light: ${over.slice(0, 3).map(f1).join(', ')}`);
+  }
+  const nNew = sel.filter(isNewLift).length; if (nNew) bits.push(`${nNew} new lift${nNew === 1 ? '' : 's'}: tap "find your working weight" for an accurate start`);
   if (dl) bits.push('Deload week');
   if (bi && !bi.done && !bi.deload) bits.push(`Block week ${bi.week} of ${bi.weeks}`);
   if (pre && pre === strength.length) bits.push('Pre-filled from your last session');
@@ -1688,7 +1724,7 @@ function cardHtml(i) {
       <button class="chk ${s.done ? 'on' : ''}" data-a="toggleSet" data-i="${i}" data-j="${j}" aria-label="Log set">${s.done ? ic('check') : ''}</button></div></div>`;
   }).join('');
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
-  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
+  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
   const canWarm = state.settings.warmups && ex.type === 'compound' && !ex.noE1 && !ex.bw && !it.sets.some(s => s.type === 'warmup');
   return `<article class="card ex" data-ex="${i}">
     <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${mainTag(it)}${ss}</div>
@@ -3218,7 +3254,7 @@ function focusHtml() {
   const s = it.sets[j], last = lastPerf(ex.id), ph = last && last[Math.min(j, last.length - 1)], pct = rec(ex.primary);
   let wn = 0; const lbls = it.sets.map(x => x.type === 'warmup' ? 'W' : x.type === 'drop' ? 'D' : String(++wn)), work = wn;
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
-  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : '';
+  const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
   const setList = it.sets.map((x, k) => `<button class="fs ${k === j ? 'on' : ''} ${x.done ? 'done' : ''} t-${x.type}" data-a="fPick" data-i="${i}" data-j="${k}"><span class="fsn">${lbls[k]}</span><span class="fsv">${x.weight || '–'}<i>×</i>${x.reps || '–'}</span>${x.done ? ic('check', 'sm') : ''}</button>`).join('');
   const what = s.type === 'warmup' ? 'Warm-up set' : s.type === 'drop' ? 'Drop set' : `Set ${lbls[j]} of ${work}`;
   return `<div class="card focus${sessPaused() ? ' dimmed' : ''}" id="focus" data-i="${i}">${nav}
@@ -3284,6 +3320,75 @@ function afterLog(i) {
 })();
 const _cardioDone = A.cardioDone;
 A.cardioDone = el => { _cardioDone(el); const it = wk().items[+el.dataset.i]; if (it && it.done && sessActive()) afterLog(+el.dataset.i); };
+
+/* ---------- guided calibration: find your working weight for a lift ForgeFit hasn't seen you do ---------- */
+/* 1–3 short sets of 5 reps. You say how many more reps you had in you; ForgeFit estimates your one-rep max from the
+   hardest honest set and sets today's working weight from it. Nothing here counts as a working set. */
+const isNewLift = ex => ex && !ex.noE1 && !ex.cardio && !state.prs[ex.id] && !lastPerf(ex.id) && !(state.calib && state.calib[ex.id]);
+const calibBtn = (ex, i) => isNewLift(ex) ? `<button class="coach cal" data-a="calib" data-id="${ex.id}" data-i="${i}">${ic('target')} New lift: find your working weight</button>` : '';
+let cal = null;
+const CAL_REPS = 5;
+function calStart(id, i) {
+  const ex = exById(id); if (!ex) return;
+  const g = GOALS[state.profile.goal] || GOALS.muscle, w0 = ex.noE1 ? 0 : Math.max(ex.bw ? 0 : inc(), rnd(recWeight(ex, CAL_REPS, 5) * .85));
+  cal = { id, i: Number.isFinite(i) ? i : null, sets: [], w: w0, r: CAL_REPS, rir: null, g };
+  calPaint();
+}
+function calEst(s) { const ex = exById(cal.id); return est1(ex, { weight: s.w, reps: s.r, rir: Math.min(s.rir, 5), fail: false }); }
+function calBest() {                                   // the hardest set is the most accurate; ties go to the heavier one
+  if (!cal.sets.length) return null;
+  return [...cal.sets].sort((a, b) => a.rir - b.rir || b.w - a.w)[0];
+}
+function calPaint() {
+  const ex = exById(cal.id), u = unit(), k = cal.sets.length, best = calBest();
+  const easy = best && best.rir >= 4, done = k >= 3 || (best && !easy);
+  const rirChips = [0, 1, 2, 3, 4, 5].map(v => `<button class="${cal.rir === v ? 'on' : ''}" data-a="calRir" data-v="${v}">${v === 5 ? '5+' : v}</button>`).join('');
+  const hist = cal.sets.map((s, n) => `<div class="calrow"><span>Set ${n + 1}</span><b>${s.w ? s.w + ' ' + u : 'Bodyweight'} × ${s.r}</b><span class="mut">${s.rir >= 5 ? '5+' : s.rir} left</span></div>`).join('');
+  let body;
+  if (done && best) {
+    const e = Math.round(calEst(best)), g = cal.g, comp = ex.type === 'compound', reps = comp ? g.cReps : g.iReps, rir = clamp(g.rir + blockRirAdj(), 0, 4);
+    const L = e / (1 + Math.min(reps + rir, 15) / 30), ww = ex.bw ? Math.max(0, rnd(L - ex.bw * bw())) : Math.max(inc(), rnd(L));
+    cal.result = { e, ww, reps };
+    body = `<div class="calres"><span class="flab">Your working weight</span><b>${ww ? ww + ' ' + u : 'Bodyweight'}</b><span>for ${reps} reps, leaving about ${rir} in the tank</span></div>
+      <p class="mut sm">Estimated one-rep max: about ${e} ${u}. ForgeFit keeps fine-tuning this from every set you log.</p>${hist ? `<div class="calhist">${hist}</div>` : ''}
+      <button class="btn pri hero full" data-a="calApply">${ic('check')} Use ${ww ? ww + ' ' + u : 'this'}</button>
+      ${k < 3 ? '<button class="btn sec full mt8" data-a="calMore">Do one more test set</button>' : ''}`;
+  } else {
+    const tip = k === 0 ? `Start light. Pick a weight you're sure you can lift for ${CAL_REPS} clean reps, do ${CAL_REPS}, then say how many more you could have done.`
+      : `That was easy, so let's go a bit heavier. Rest a minute, then do ${CAL_REPS} reps at the weight below.`;
+    body = `<p class="mut sm">${tip}</p>${hist ? `<div class="calhist">${hist}</div>` : ''}
+      <div class="fset"><b class="fwhat">Test set ${k + 1}</b>
+        <div class="steps"><div class="stepper"><span class="flab">${ex.bw ? 'Added ' + u : u}</span><div class="sctl"><button data-a="calStep" data-k="w" data-d="-1" aria-label="Less weight">${ic('minus')}</button><input inputmode="decimal" data-f="calIn" data-k="w" value="${cal.w || ''}" placeholder="0" aria-label="Weight"><button data-a="calStep" data-k="w" data-d="1" aria-label="More weight">${ic('plus')}</button></div></div>
+        <div class="stepper"><span class="flab">Reps done</span><div class="sctl"><button data-a="calStep" data-k="r" data-d="-1" aria-label="Fewer reps">${ic('minus')}</button><input inputmode="numeric" data-f="calIn" data-k="r" value="${cal.r}" aria-label="Reps"><button data-a="calStep" data-k="r" data-d="1" aria-label="More reps">${ic('plus')}</button></div></div></div>
+        <div class="frir"><span class="flab">How many more reps could you have done?</span><div class="segp full">${rirChips}</div></div>
+        <button class="btn pri full" data-a="calSave" ${cal.rir == null ? 'disabled' : ''}>Save test set</button></div>
+      <p class="mut xs pt8">Stop if anything hurts. Test sets aren't counted as working sets.</p>`;
+  }
+  openSheet('Find your working weight', `<div class="col cal"><div><b class="calname">${esc(ex.name)}</b></div>${body}</div>`);
+}
+A.calib = el => calStart(el.dataset.id, el.dataset.i != null && el.dataset.i !== '' ? +el.dataset.i : NaN);
+A.calRir = el => { cal.rir = +el.dataset.v; calPaint(); };
+A.calStep = el => { const k = el.dataset.k, d = +el.dataset.d; if (k === 'w') cal.w = Math.max(0, Math.round(((+cal.w || 0) + d * inc()) * 100) / 100); else cal.r = clamp((+cal.r || 0) + d, 1, 20); calPaint(); };
+F.calIn = el => { const v = parseFloat(el.value); if (el.dataset.k === 'w') cal.w = Number.isFinite(v) ? Math.max(0, v) : 0; else cal.r = Number.isFinite(v) ? clamp(Math.round(v), 1, 20) : CAL_REPS; };
+A.calSave = () => {
+  if (cal.rir == null) return;
+  const s = { w: +cal.w || 0, r: +cal.r || CAL_REPS, rir: cal.rir }; cal.sets.push(s); cal.rir = null;
+  if (s.rir >= 4 && cal.sets.length < 3) {           // too easy: aim the next set at ~2 reps left
+    const e = calEst(s), ex = exById(cal.id), L = e / (1 + (CAL_REPS + 2) / 30);
+    cal.w = ex.bw ? Math.max(0, rnd(L - ex.bw * bw())) : Math.max(inc(), rnd(L)); cal.r = CAL_REPS;
+  }
+  calPaint();
+};
+A.calMore = () => { const b = calBest(); cal.result = null; if (b) { const e = calEst(b), ex = exById(cal.id), L = e / (1 + (CAL_REPS + 1) / 30); cal.w = ex.bw ? Math.max(0, rnd(L - ex.bw * bw())) : Math.max(inc(), rnd(L)); } cal.sets = cal.sets.map(x => ({ ...x, rir: Math.max(x.rir, 4) })); calPaint(); };
+A.calApply = () => {
+  const ex = exById(cal.id), r = cal.result; if (!ex || !r) return;
+  state.e1rm[ex.id] = r.e; state.calib = state.calib || {}; state.calib[ex.id] = Date.now();
+  const items = wk().items; let n = 0;
+  items.forEach(it => { if (it.exId !== ex.id) return; it.sets.forEach(s => { if (!s.done && s.type === 'work') { s.weight = recWeight(ex, +s.reps || r.reps, s.rir ?? 2); n++; } }); it.trimmed = false; });
+  scheduleSave(); closeSheet(); renderWorkout();
+  toast(`Working weight set${n ? ` for ${n} set${n === 1 ? '' : 's'}` : ''}: ${r.ww ? r.ww + ' ' + unit() : 'bodyweight'}`);
+  cal = null;
+};
 
 /* =====================================================================
    ForgeFit features: onboarding, quick-log parser, templates, custom
