@@ -20,11 +20,29 @@ const BODY_MUS = {
 };
 const MIRROR = 'transform="matrix(-1 0 0 1 200 0)"';
 let recSide = 'front', recSel = null, recSwiped = false;
-function bodySvg(side) {
-  const mus = Object.entries(BODY_MUS[side]).map(([m, ds]) => { const p = rec(m);
-    return `<g class="mus ${recCol(p)}${recSel === m ? ' sel' : ''}" data-a="recMuscle" data-m="${m}" role="button" aria-label="${m} ${p}% fresh">${ds.map(d => `<path d="${d}"/><path d="${d}" ${MIRROR}/>`).join('')}</g>`; }).join('');
-  const base = BODY_BASE[side].map(d => `<path class="base" d="${d}"/><path class="base" d="${d}" ${MIRROR}/>`).join('');
-  return `<svg viewBox="0 0 200 392" aria-label="${side} view"><circle class="base" cx="100" cy="27" r="15"/><path class="base" d="M93 40 L93 55 L107 55 L107 40 Z"/>${base}${mus}</svg>`;
+/* paint(m) → { cls, label, act, fill }: defaults to the recovery colours with tap-to-jump.
+   `inline` writes plain fill colours instead of classes, for images drawn outside the page (share card). */
+function bodySvg(side, paint, inline) {
+  paint = paint || (m => { const p = rec(m); return { cls: recCol(p) + (recSel === m ? ' sel' : ''), label: `${m} ${p}% fresh`, act: 'recMuscle' }; });
+  const bf = inline ? ' fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1"' : '';
+  const mus = Object.entries(BODY_MUS[side]).map(([m, ds]) => { const o = paint(m) || {};
+    const at = o.act ? ` data-a="${o.act}" role="button"` : '', fl = inline ? ` fill="${o.fill || 'rgba(255,255,255,.1)'}" stroke="#141721" stroke-width="1.3"` : (o.fill ? ` style="--mf:${o.fill}"` : '');
+    return `<g class="mus ${o.cls || ''}" data-m="${m}"${at}${fl} aria-label="${esc(o.label || m)}">${ds.map(d => `<path d="${d}"/><path d="${d}" ${MIRROR}/>`).join('')}</g>`; }).join('');
+  const base = BODY_BASE[side].map(d => `<path class="base"${bf} d="${d}"/><path class="base"${bf} d="${d}" ${MIRROR}/>`).join('');
+  return `<svg viewBox="0 0 200 392" aria-label="${side} view"${inline ? ' xmlns="http://www.w3.org/2000/svg" width="200" height="392"' : ''}><circle class="base"${bf} cx="100" cy="27" r="15"/><path class="base"${bf} d="M93 40 L93 55 L107 55 L107 40 Z"/>${base}${mus}</svg>`;
+}
+/* orange heat by share (0–1): used for "what this exercise works" and "what today hits" */
+const heatFill = a => a > 0 ? `rgba(249,115,22,${(.18 + .82 * clamp(a, 0, 1)).toFixed(2)})` : '';
+const heatPaint = (W, lbl) => m => W[m] > 0 ? { cls: 'heat', fill: heatFill(W[m]), label: lbl(m) } : { cls: 'off', label: m };
+function bodyPair(W, lbl, cls) {
+  const p = heatPaint(W, lbl || (m => m));
+  return `<div class="bpair ${cls || ''}" aria-hidden="${cls === 'bsm' ? 'true' : 'false'}"><div>${bodySvg('front', p)}</div><div>${bodySvg('back', p)}</div></div>`;
+}
+/* weighted working sets per muscle for a list of items (plan or history) */
+function itemsLoad(items) {
+  const L = {}; MUSCLES.forEach(m => L[m] = 0);
+  items.forEach(it => { if (it.cardio) return; const ex = exById(it.exId || it.id), W = it.mw || (ex ? exW(ex) : itemW(it)), n = (it.sets || []).filter(s => (s.type || 'work') !== 'warmup').length; for (const m in W) if (L[m] != null) L[m] += n * W[m]; });
+  return L;
 }
 const RING_C = 2 * Math.PI * 48;
 function readyRing(avg) {

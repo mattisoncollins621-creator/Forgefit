@@ -40,7 +40,7 @@ function focusHtml() {
   let wn = 0; const lbls = it.sets.map(x => x.type === 'warmup' ? 'W' : x.type === 'drop' ? 'D' : String(++wn)), work = wn;
   const hint = progressHint(ex, it), fat = hint ? null : fatigueHint(ex, it);
   const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
-  const setList = it.sets.map((x, k) => `<button class="fs ${k === j ? 'on' : ''} ${x.done ? 'done' : ''} t-${x.type}" data-a="fPick" data-i="${i}" data-j="${k}"><span class="fsn">${lbls[k]}</span><span class="fsv">${x.weight || '–'}<i>×</i>${x.reps || '–'}</span>${x.done ? ic('check', 'sm') : ''}</button>`).join('');
+  const jl = window.__just, setList = it.sets.map((x, k) => `<button class="fs ${k === j ? 'on' : ''} ${x.done ? 'done' : ''}${jl && jl.i === i && jl.j === k && Date.now() - jl.t < 1200 ? ' just' : ''} t-${x.type}" data-a="fPick" data-i="${i}" data-j="${k}"><span class="fsn">${lbls[k]}</span><span class="fsv">${x.weight || '–'}<i>×</i>${x.reps || '–'}</span>${x.done ? ic('check', 'sm') : ''}</button>`).join('');
   const what = s.type === 'warmup' ? 'Warm-up set' : s.type === 'drop' ? 'Drop set' : `Set ${lbls[j]} of ${work}`;
   return `<div class="card focus${sessPaused() ? ' dimmed' : ''}" id="focus" data-i="${i}">${nav}
     <div class="mut xs fcount">Exercise ${i + 1} of ${n}</div>
@@ -81,7 +81,8 @@ A.fRir = el => {
   el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); scheduleSave();
 };
 /* after a set is logged: stay on this exercise until its sets are done (alternating inside a superset), then move on */
-function afterLog(i) {
+function afterLog(i, j) {
+  window.__just = { i, j, t: Date.now() };
   const items = wk().items, it = items[i];
   if (!focusOn()) {                                   // list view: bring the next set into view
     requestAnimationFrame(() => { const c = curSet(); if (!c) return; const card = $(`#exlist [data-ex="${c.i}"]`); if (!card) return;

@@ -197,7 +197,8 @@ A.finish = () => {
     <h4 class="subh">What you did</h4>
     ${items.map(i => `<div class="prow static"><b>${esc(i.name)}</b><span class="mut xs">${i.sets.filter(s => s.type !== 'warmup').map(s => s.w + '×' + s.r).join(' · ')}</span></div>`).join('')}
     ${cardio.map(c => `<div class="prow static"><b>${esc(c.name)}</b><span class="mut xs">${c.min} min${c.dist ? ' · ' + c.dist : ''}</span></div>`).join('')}
-    <div class="grid2"><button class="btn sec" data-a="sessTpl">Save as routine</button><button class="btn sec" data-a="sessShare">Share summary</button></div>
+    <button class="btn pri full" data-a="shareCard" data-id="${rec.id}">${ic('image')} Share as image</button>
+    <div class="grid2"><button class="btn sec" data-a="sessTpl">Save as routine</button><button class="btn sec" data-a="sessShare">Share as text</button></div>
     <button class="btn pri full" data-a="closeSheet">Done</button></div>`, { onClose: () => go('workout') });
 };
 A.sessShare = () => {

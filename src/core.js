@@ -540,7 +540,7 @@ function cue(kind) {
 function buzz(kind) {
   const s = state.settings; if (!s.haptics || !navigator.vibrate) return;
   const k = { light: .6, medium: 1, strong: 1.7 }[s.haptic] || 1;
-  const base = { tap: [8], set: [18], timer: [70, 50, 70, 50, 140], pr: [40, 30, 40, 30, 160], finish: [30, 30, 30, 30, 140], phase: [12] }[kind] || [10];
+  const base = { tick: [4], tap: [8], set: [18], timer: [70, 50, 70, 50, 140], pr: [40, 30, 40, 30, 160], finish: [30, 30, 30, 30, 140], phase: [12] }[kind] || [10];
   try { navigator.vibrate(base.map((v, i) => i % 2 === 0 ? Math.round(v * k) : v)); } catch (e) { }
 }
 function notifyUser(title, body) {
@@ -585,15 +585,21 @@ function armTimer() {
 function paintTimer() {
   const bar = $('#tbar');
   if (!state.timer) { bar.hidden = true; return; }
-  const left = timerLeft(); if (left <= 0) { endTimer(); return; }
-  bar.hidden = false;
+  const left = timerLeft(); if (left <= 0) { endTimer(true); return; }
+  bar.classList.remove('over'); clearTimeout(tOver); bar.hidden = false;
   $('#tdisp').textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
   $('#tlabel').textContent = state.timer.label;
   $('#tfill').style.transform = `scaleX(${clamp(left / state.timer.total, 0, 1)})`;
 }
-function endTimer() {
+let tOver = 0;
+function endTimer(natural) {
   const t = state.timer; state.timer = null;
-  clearInterval(tInt); clearTimeout(tBg); $('#tbar').hidden = true;
+  clearInterval(tInt); clearTimeout(tBg); clearTimeout(tOver);
+  const bar = $('#tbar');
+  if (natural && t && !document.hidden && !reduceMotion()) {   // rest ran out on screen: pulse "Go" for a moment, then hide
+    bar.hidden = false; bar.classList.add('over'); $('#tdisp').textContent = 'Go'; $('#tlabel').textContent = 'Rest over · next set'; $('#tfill').style.transform = 'scaleX(0)';
+    tOver = setTimeout(() => { bar.classList.remove('over'); if (!state.timer) bar.hidden = true; }, 2400);
+  } else { bar.classList.remove('over'); bar.hidden = true; }
   if (t) { cue('timer'); buzz('timer'); notifyUser('Rest over', 'Time for your next set.'); }
   scheduleSave(); LiveActivity.sync();
 }

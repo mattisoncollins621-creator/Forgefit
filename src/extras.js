@@ -496,6 +496,7 @@ A.exInfo = el => {
   const missing = (ex.gear || []).filter(g => !state.gear[g]);
   openSheet(ex.name, `<div class="col">
     <div class="row gap6 wrap"><span class="tag or">${esc(ex.primary)}</span>${(ex.secondary || []).map(m => { const w = exW(ex)[m]; return `<span class="tag">${esc(m)}${w && w !== .5 ? ' ' + Math.round(w * 100) + '%' : ''}</span>`; }).join('')}<span class="tag">${ex.cardio ? 'Cardio' : esc(ex.type)}</span></div>
+    ${ex.cardio ? '' : `<div class="exmap">${bodyPair(exW(ex), m => `${m}: ${Math.round((exW(ex)[m] || 0) * 100)}%`)}<p class="mut xs center">Brighter means it works that muscle harder.</p></div>`}
     <p class="mut sm">${ex.gear.length ? 'Equipment: ' + esc(ex.gear.map(gearLabel).join(', ')) : 'No equipment needed'}${missing.length ? ` · <span class="am">you have ${esc(missing.map(gearLabel).join(', '))} switched off</span>` : ''}</p>
     <ol class="how">${steps.map((t, k) => `<li><b>${steps.length > 1 ? labels[k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol>
     ${ex.cardio ? '' : `<div class="prow static"><div class="grow"><b>Your numbers</b><div class="mut xs">${state.e1rm[ex.id] ? 'Estimated 1RM ' + state.e1rm[ex.id] + ' ' + unit() : 'No estimate yet'}${pr ? ' · best ' + Math.round(pr.weight) + ' × ' + pr.reps : ''}${l ? ' · last ' + l.slice(0, 4).map(s => s.w + '×' + s.r).join(', ') : ''}</div></div></div>`}

@@ -3,6 +3,7 @@ const tick = async (page, n) => { await page.locator('#exlist .chk').nth(n).clic
 const setCount = page => page.evaluate(() => state.workout.items[0].sets.length);
 const seed = page => page.evaluate(() => { state.workout.items = [buildItem(exById('bb_bench'), { weight: 135 }), buildItem(exById('bb_row'), { weight: 115 }), buildItem(exById('lat_pulldown'), { weight: 100 })]; scheduleSave(); renderWorkout(); });
 async function mouseSwipe(page, sel, dx, dy = 0, steps = 12) {
+  await page.locator(sel).first().evaluate(el => el.scrollIntoView({ block: 'center' }));
   const bb = await page.locator(sel).first().boundingBox(); const x = bb.x + 20, y = bb.y + bb.height / 2;
   await page.mouse.move(x, y); await page.mouse.down();
   for (let k = 1; k <= steps; k++) await page.mouse.move(x + dx * k / steps, y + dy * k / steps);
@@ -41,6 +42,7 @@ async function mouseSwipe(page, sel, dx, dy = 0, steps = 12) {
     await t.page.goto(URL + 'index.html'); await H.skipOnboarding(t.page); await t.page.click('[data-a=seenNew]'); await seed(t.page);
     const cdp = await t.ctx.newCDPSession(t.page);
     const touch = async (sel, dx, dy) => {
+      await t.page.locator(sel).first().evaluate(el => el.scrollIntoView({ block: 'center' }));
       const bb = await t.page.locator(sel).first().boundingBox(), x = bb.x + 24, y = bb.y + bb.height / 2;
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let k = 1; k <= 14; k++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * k / 14, y: y + dy * k / 14 }] });

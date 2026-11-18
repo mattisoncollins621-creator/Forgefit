@@ -799,3 +799,50 @@ input.rs{-webkit-appearance:none;appearance:none;display:block;width:100%;height
 .calres span:last-child{font-size:13px;color:var(--mut)}
 
 .focus .mini[disabled]{opacity:.4}
+
+/* phase 3: body maps (v17) */
+.mus.heat path{fill:var(--mf)}
+.mus.off path{fill:var(--basef);stroke:var(--bases);stroke-width:.8}
+.bpair{display:flex;justify-content:center;gap:6px}
+.bpair>div{width:min(42%,128px);aspect-ratio:200/392}
+.bpair svg{width:100%;height:100%;display:block;overflow:visible}
+.bpair .base{fill:var(--basef);stroke:var(--bases);stroke-width:1}
+.bpair .mus path{stroke:var(--card);stroke-width:1.3;cursor:default}
+#sheet .bpair .mus path{stroke:var(--sheet,#141721)}
+.exmap{padding:6px 0 2px}
+.hits{display:flex;gap:12px;align-items:center;margin-top:14px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--bd)}
+:root[data-theme=light] .hits{background:rgba(15,23,42,.03)}
+.bpair.bsm{gap:2px;flex:0 0 auto}
+.bpair.bsm>div{width:40px}
+.hits .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hrow2{display:grid;grid-template-columns:76px 1fr 28px;gap:8px;align-items:center;font-size:12px;color:var(--mut)}
+.hrow2 i{display:block;height:5px;border-radius:999px;background:var(--or);opacity:.85}
+.hrow2 b{text-align:right;color:var(--tx2);font-weight:600}
+svg.scrub{touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
+.chart g.sc line{stroke:var(--or);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+.chart g.sc circle{fill:var(--or);stroke:#fff;stroke-width:2;filter:drop-shadow(0 0 6px rgba(249,115,22,.8))}
+.chart g.sc rect{fill:#1E2230;stroke:rgba(255,255,255,.12)}
+:root[data-theme=light] .chart g.sc rect{fill:#fff;stroke:rgba(15,23,42,.15)}
+.chart g.sc .sv{fill:var(--tx);font-size:12px;font-weight:700}
+.chart g.sc .sd{fill:var(--mut);font-size:9.5px}
+.segp.rng{margin-top:10px}
+.segp.rng button{padding:5px 12px}
+.scimg{width:100%;border-radius:18px;border:1px solid var(--bd);display:block;background:#0A0C10}
+
+/* phase 3: small moments (v17) */
+@media (prefers-reduced-motion:no-preference){
+  .fs.just{animation:fsjust .7s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes fsjust{0%{transform:scale(.8);box-shadow:0 0 0 0 rgba(16,185,129,.6)}45%{transform:scale(1.12)}100%{transform:scale(1);box-shadow:0 0 0 10px rgba(16,185,129,0)}}
+  .fs.just .ic{animation:ffpop .45s cubic-bezier(.2,1.7,.4,1)}
+  #tbar.over{animation:tover .8s ease-in-out 3}
+  @keyframes tover{0%,100%{filter:none}50%{filter:brightness(1.25) saturate(1.2);box-shadow:0 0 28px 4px rgba(249,115,22,.55)}}
+  #tbar.over #tdisp{animation:tgo .8s ease-in-out 3}
+  @keyframes tgo{50%{transform:scale(1.12)}}
+  #pr .trophy::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(251,146,60,.6);animation:prring 1.6s ease-out infinite}
+  @keyframes prring{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.5);opacity:0}}
+  #pr .prbig{animation:prbig .6s .15s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes prbig{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+  .fset>.btn.pri:active{transform:scale(.97)}
+}
+#pr .trophy{position:relative}
+#tbar.over #tdisp{display:inline-block}

@@ -109,7 +109,7 @@ A.exHist = el => {
     <div class="tiles">${tile(ss.length, 'Sessions')}${ex.noE1 ? tile(bestReps || '—', 'Best reps') : tile(state.e1rm[ex.id] ? state.e1rm[ex.id] + ' ' + unit() : '—', 'Est. 1RM')}${ex.noE1 ? tile(ss.length ? fmtDate(ss[0].t) : '—', 'Last done') : tile(pr ? Math.round(pr.weight) + '×' + pr.reps : '—', 'Best set')}</div>
     ${st ? `<div class="banner note"><div class="grow"><b>Stalled for about ${st.weeks} weeks</b><div class="mut sm">${esc(stalledAdvice(ex))}</div></div></div>` : ''}
     ${noteLine(ex.id)}
-    ${pts.length >= 2 ? lineChart(pts) : ''}
+    ${pts.length >= 2 ? lineChart(pts, { u: ex.noE1 ? '' : unit() }) : ''}
     ${ss.length ? `<div class="lbl">Every session</div>${ex.noE1 ? '' : '<p class="mut xs">Right column: estimated 1RM from your best set that day, and the change from the session before.</p>'}${rows}`
       : '<div class="empty">No sessions logged with this exercise yet. Finish a workout that includes it and its history appears here.</div>'}
     <div class="grid2"><button class="btn sec" data-a="closeSheet">Close</button><button class="btn pri" data-a="libAdd" data-id="${esc(ex.id)}">${ic('plus')} Add to workout</button></div></div>`);

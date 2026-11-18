@@ -297,6 +297,7 @@ function renderWorkout() {
         <div class="mchips"><span>${n} exercise${n === 1 ? '' : 's'}</span><span>~${st.min} min</span>${trimmed ? `<span class="am">${trimM ? trimM[1] + '% ' : ''}auto-trim active</span>` : ''}</div></div>
         <button class="ib" data-a="regen" aria-label="Regenerate workout" title="Regenerate">${ic('refresh')}</button></div>
       ${w.note ? `<p class="mut xs hnote">${esc(w.note)}</p>` : ''}
+      ${todayHits(w.items)}
       <div class="toolbar"><button data-a="autoSuper">${ic('link')}<span>Supersets</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="nl">${ic('timer')}<span>Quick log</span></button><button data-a="wkMore" aria-label="More options">${ic('more')}<span>More</span></button></div>
     </div>
     ${list}
@@ -306,6 +307,11 @@ function renderWorkout() {
   paintClock(); tickSess();
 }
 R.workout = renderWorkout;
+function todayHits(items) {                      // mini front/back figure + the muscles today's plan works most
+  const L = itemsLoad(items), top = MUSCLES.filter(m => L[m] >= .5).sort((a, b) => L[b] - L[a]); if (!top.length) return '';
+  const mx = L[top[0]], W = {}; top.forEach(m => W[m] = L[m] / mx);
+  return `<div class="hits">${bodyPair(W, null, 'bsm')}<div class="grow"><span class="flab">Today hits</span>${top.slice(0, 5).map(m => `<div class="hrow2"><span>${m}</span><i style="width:${Math.round(L[m] / mx * 100)}%"></i><b>${fmtN(Math.round(L[m] * 2) / 2)}</b></div>`).join('')}<span class="mut xs">weighted sets</span></div></div>`;
+}
 A.wkMore = () => {
   const b = (x, icn, l, d) => `<button class="btn sec full lrow" data-a="editDo" data-x="${x}">${ic(icn)}<span><b>${l}</b><em>${d}</em></span></button>`;
   openSheet('More options', `<div class="col">${b('repeatLast', 'repeat', 'Repeat last workout', 'Start from your previous session')}${b('planOpen', 'calendar', 'Plan &amp; training blocks', 'Weekly schedule and ramp-up blocks')}${b('regen', 'refresh', 'Regenerate workout', 'Rotate accessories, keep your main lifts')}${b('newMain', 'dumbbell', 'Pick new main lifts', 'Choose different main lifts for this block')}</div>`);
@@ -344,7 +350,7 @@ A.toggleSet = el => {
     if (pr) showPR(pr);
   } else undoSet(it, s, ex);
   scheduleSave(); if (!wasLive && sessActive()) renderWorkout(); else refreshCard(i);
-  if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } afterLog(i); }
+  if (s.done) { const r = document.querySelectorAll(`#exlist [data-ex="${i}"] .srow`)[j]; if (r) { r.classList.add('pop'); setTimeout(() => r.classList.remove('pop'), 800); } afterLog(i, j); }
   else if (focusOn()) { focusSet = j; renderWorkout(); }
 };
 F.set = el => {
@@ -609,9 +615,14 @@ function nextPR() {
   prShowing = true; cue('pr'); buzz('pr');
   $('#pr-body').innerHTML = `<div class="trophy">${ic('trophy')}</div><div class="prtag">${p.milestone ? p.milestone + ' ' + unit() + ' CLUB' : 'NEW PERSONAL RECORD'}</div>
     <h2>${esc(p.ex.name)}</h2><div class="prbig">${p.weight} ${unit()} × ${p.reps}</div>
-    <div class="mut">Estimated 1RM <b>${p.old}</b> → <b class="or">${p.now} ${unit()}</b> (+${Math.max(1, p.now - p.old)})</div>
+    <div class="mut">Estimated 1RM <b>${p.old}</b> → <b class="or"><span id="prCount">${p.now}</span> ${unit()}</b> (+${Math.max(1, p.now - p.old)})</div>
     <div class="row gap6 pt8"><button class="btn pri grow" data-a="prNext">Keep lifting</button><button class="btn sec" data-a="prShare">Share</button></div>`;
   window.__pr = p; el.hidden = false;
+  if (!reduceMotion() && p.now > p.old) {          // count the new estimate up from the old one
+    const t0 = performance.now(), el2 = $('#prCount'), a = p.old, b = p.now;
+    const step = t => { const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); if (el2 && el2.isConnected) { el2.textContent = Math.round(a + (b - a) * e); if (k < 1) requestAnimationFrame(step); } };
+    el2.textContent = a; requestAnimationFrame(step);
+  }
   const conf = $('#confetti'); conf.innerHTML = '';
   if (!reduceMotion()) for (let k = 0; k < 34; k++) { const s = document.createElement('span'); s.style.cssText = `left:${Math.random() * 100}%;background:hsl(${Math.random() * 60 + 10},95%,60%);animation-delay:${Math.random() * .6}s;animation-duration:${1.8 + Math.random() * 1.4}s`; conf.appendChild(s); }
 }
@@ -642,7 +653,7 @@ A.endDeload = () => { state.deload = null; if (state.block && blockDeload()) sta
 /* ---------- finish session ---------- */
 const setVol = (ex, s) => loadOf(ex, s) * (+s.reps || 0);
 /* A.finish lives in session.js */
-function stopRestTimerQuiet() { state.timer = null; clearInterval(tInt); clearTimeout(tBg); $('#tbar').hidden = true; }
+function stopRestTimerQuiet() { state.timer = null; clearInterval(tInt); clearTimeout(tBg); clearTimeout(tOver); $('#tbar').classList.remove('over'); $('#tbar').hidden = true; }
 A.sessTpl = () => { const s = window.__lastSession; ask('Save routine', 'Routine name', s.rec.name.replace(' Session', ''), n => saveTemplate(n, s.tpl)); };
 /* ---------- navigation ---------- */
 function go(t) {

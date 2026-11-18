@@ -398,7 +398,8 @@ function lineChart(pts, o = {}) {
     .map((t, i) => `<text class="xl" x="${X(t).toFixed(1)}" y="${h - 7}" text-anchor="${nT === 1 ? 'middle' : i === 0 ? 'start' : i === nT - 1 ? 'end' : 'middle'}">${fmtDate(t)}</text>`).join('');
   const dots = P.map((p, i) => i === P.length - 1 ? '' : (P.length <= 24 ? `<circle class="pt" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>` : '')).join('');
   const lp = P[P.length - 1];
-  return `<svg viewBox="0 0 ${w} ${h}" class="chart" role="img" aria-label="Trend chart"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F97316" stop-opacity=".34"/><stop offset="1" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>
+  const data = esc(JSON.stringify(P.map((q, i) => [+q[0].toFixed(1), +q[1].toFixed(1), pts[i].t, fmt(pts[i].v)])));
+  return `<svg viewBox="0 0 ${w} ${h}" class="chart scrub" role="img" aria-label="Trend chart. Touch and drag to read values." data-pts="${data}" data-u="${esc(o.u || '')}" data-b="${h - pb}" data-t="${pt}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F97316" stop-opacity=".34"/><stop offset="1" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>
     <g class="grid">${ticks}</g>${area ? `<path d="${area}" class="area" style="fill:url(#${gid})"/>` : ''}<path d="${d}" class="ln"/>${dots}
     <circle class="halo" cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="8"/><circle class="pt last" cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="4"/>${dates}</svg>`;
 }
@@ -434,7 +435,7 @@ function renderProgress() {
     ${progTools()}
     <div class="card"><div class="row sp"><h2 class="h2">Strength curve</h2><select data-f="progRange" class="sel-sm"><option value="30" ${prog.range === 30 ? 'selected' : ''}>1 month</option><option value="90" ${prog.range === 90 ? 'selected' : ''}>3 months</option><option value="365" ${prog.range === 365 ? 'selected' : ''}>1 year</option><option value="0" ${prog.range === 0 ? 'selected' : ''}>All time</option></select></div>
       ${ids.length ? `<select data-f="progEx">${ids.map(id => `<option value="${id}" ${id === prog.ex ? 'selected' : ''}>${esc(exById(id).name)}</option>`).join('')}</select>
-      <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts)}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
+      <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts, { u: unit() })}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
       : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
     ${bodyVsStrength()}
     <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="segp"><button class="${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
@@ -458,15 +459,15 @@ R.progress = renderProgress;
 F.progEx = el => { prog.ex = el.value; renderProgress(); };
 F.progRange = el => { prog.range = +el.value; renderProgress(); };
 A.heat = el => { prog.heat = el.dataset.v; renderProgress(); };
-A.histMenu = el => { const h = state.history.find(x => x.id === el.dataset.id); if (!h) return; openSheet(h.name || 'Session', `<div class="col"><p class="mut sm">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')} · ${h.sets} sets · ${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</p><button class="btn danger full" data-a="histDel" data-id="${h.id}">Delete this session</button></div>`); };
+A.histMenu = el => { const h = state.history.find(x => x.id === el.dataset.id); if (!h) return; openSheet(h.name || 'Session', `<div class="col"><p class="mut sm">${h.t ? fmtDT(h.t) : esc(h.legacyDate || '')} · ${h.sets} sets · ${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</p><button class="btn sec full" data-a="shareCard" data-id="${h.id}">${ic('image')} Share as image</button><button class="btn danger full" data-a="histDel" data-id="${h.id}">Delete this session</button></div>`); };
 A.histDel = el => { if (!confirm('Delete this session from history?')) return; closeSheet(); state.history = state.history.filter(h => h.id !== el.dataset.id); scheduleSave(); renderProgress(); };
 
 /* ---------- body tab: measurements + photos ---------- */
-let bodyMetric = 'weight', photoUrls = [];
+let bodyMetric = 'weight', bodyRange = 0, photoUrls = [];
 const BM = { weight: 'Body weight', bf: 'Body fat %', chest: 'Chest', waist: 'Waist', hips: 'Hips', arm: 'Arm', thigh: 'Thigh' };
 function renderBody() {
   const u = unit() === 'kg' ? 'cm' : 'in', ms = [...state.measures].sort((a, b) => a.t - b.t);
-  const pts = ms.filter(m => m[bodyMetric] != null && m[bodyMetric] !== '').map(m => ({ t: m.t, v: +m[bodyMetric] }));
+  const pts = ms.filter(m => m[bodyMetric] != null && m[bodyMetric] !== '' && (!bodyRange || m.t >= Date.now() - bodyRange * DAY)).map(m => ({ t: m.t, v: +m[bodyMetric] }));
   const f = (k, l, ph) => `<div class="field"><label for="mf-${k}">${l}</label><input inputmode="decimal" id="mf-${k}" placeholder="${ph || ''}"></div>`;
   const goal = state.profile.goal, MU = { weight: unit(), bf: '%', chest: u, waist: u, hips: u, arm: u, thigh: u };
   const GOOD = { weight: goal === 'tone' ? -1 : goal === 'muscle' || goal === 'strength' ? 1 : 0, bf: -1, waist: -1, hips: -1, chest: 1, arm: 1, thigh: 1 };
@@ -480,7 +481,7 @@ function renderBody() {
     <div class="card"><h2 class="h2">Log measurements</h2><p class="mut xs">Fill in whatever you measured today.</p>
       <div class="grid3 pt8">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
       <button class="btn pri full mt8" data-a="measSave">Save measurements</button></div>
-    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div>${lineChart(pts, { h: 190 })}</div>
+    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="segp rng">${[[30, '1M'], [90, '3M'], [180, '6M'], [365, '1Y'], [0, 'All']].map(([v, l]) => `<button class="${bodyRange === v ? 'on' : ''}" data-a="bodyRange" data-v="${v}">${l}</button>`).join('')}</div>${lineChart(pts, { h: 190, u: bodyMetric === 'bf' ? '%' : bodyMetric === 'weight' ? unit() : u })}</div>
     <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="gpill" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="gpill add" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : `<div class="empty photoempty">${ic('image', 'xl')}<b>No photos yet</b><span>Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</span></div>`}</div></div>
     <div class="card"><h2 class="h2">History</h2>${ms.length ? `<div class="tline">${[...ms].reverse().slice(0, 15).map(m => `<div class="tl"><span class="tdot"></span><div class="tlc"><div class="row sp"><span class="dpill">${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</span><button class="ib" data-a="measDel" data-id="${m.id}" aria-label="Delete entry">${ic('close')}</button></div>
       <div class="mrows">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `<div class="mrow"><span>${BM[k]}</span><b>${m[k]} ${MU[k]}</b>${delta(m, k)}</div>`).join('')}</div></div></div>`).join('')}</div>` : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
@@ -488,6 +489,7 @@ function renderBody() {
 }
 R.body = renderBody;
 F.bodyMetric = el => { bodyMetric = el.value; renderBody(); };
+A.bodyRange = el => { bodyRange = +el.dataset.v; renderBody(); };
 A.measSave = () => {
   const m = { id: uid(), t: Date.now(), unit: unit() };
   Object.keys(BM).forEach(k => { const v = parseFloat(String($('#mf-' + k).value).replace(',', '.')); if (Number.isFinite(v) && v > 0) m[k] = v; });
