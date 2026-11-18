@@ -96,7 +96,7 @@ async function mouseSwipe(page, sel, dx, dy = 0, steps = 12) {
     H.check('reminder banner appears after 2 weeks without a backup', await page.locator('.banner:has-text("Time for a backup")').count() === 1);
     await page.click('[data-a=backupLater]'); H.check('"Later" hides the reminder', await page.locator('.banner:has-text("Time for a backup")').count() === 0);
     await page.evaluate(() => { state.backupSnooze = 0; renderWorkout(); });
-    await page.click('.banner [data-a=exportJSON]'); await page.waitForSelector('#sheet:not([hidden]) [data-a=bakDownload]');
+    await page.click('.banner [data-a=bakQuick]'); await page.waitForSelector('#sheet:not([hidden]) [data-a=bakDownload]');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-a=bakDownload]')]);
     const path = await dl.path(); const json = JSON.parse(fs.readFileSync(path, 'utf8'));
     H.check('downloaded file is a ForgeFit backup with history', json.app === 'forgefit' && json.state.history.length === 1, Object.keys(json));
@@ -107,7 +107,7 @@ async function mouseSwipe(page, sel, dx, dy = 0, steps = 12) {
     // import round-trip
     await page.evaluate(() => { state.history = []; flushSave(); });
     fs.copyFileSync(path, '/tmp/t/out/backup.json');
-    await page.setInputFiles('#import-in', '/tmp/t/out/backup.json'); await page.waitForTimeout(500);
+    await page.setInputFiles('#import-in', '/tmp/t/out/backup.json'); await page.waitForSelector('[data-a=impReplace]'); await page.click('[data-a=impReplace]'); await page.waitForTimeout(500);
     H.check('import restores history', await page.evaluate(() => state.history.length) === 1);
     // share path (iOS/Android): stubbed share sheet, must be called straight from the tap
     const s2 = await H.newPage(b, { seed: false });

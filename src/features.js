@@ -566,12 +566,15 @@ function renderMore() {
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
       <p class="mut xs">Changes auto-save instantly with a rolling backup copy on this device${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. That protects against crashes, not against losing the phone.</p>
       <div class="grid2"><button class="btn sec" data-a="importJSON">Import backup</button><button class="btn sec" data-a="restoreBak">Restore auto-backup</button></div>
+      <div class="field"><label for="bak-every">Remind me to back up</label><select id="bak-every" data-f="bakEvery">${[[7, 'Every week'], [14, 'Every 2 weeks'], [30, 'Every month'], [0, 'Never']].map(([v, l]) => `<option value="${v}" ${bakEvery() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <p class="mut xs" id="persist-line">Checking whether this phone protects ForgeFit's storage…</p>
+      <details class="cue"><summary>Move your data to another phone</summary><p>1. Tap <b>Back up now</b> and send the file to the other phone (AirDrop, Messages, email or Drive).<br>2. On the other phone, open ForgeFit, go to <b>Settings → Data &amp; backup → Import backup</b> and pick the file.<br>3. Choose <b>Add as a new person</b> to keep the data already on that phone, or <b>Replace</b> if it's your own phone.</p></details>
       <button class="btn sec full" data-a="exportCSV">Export CSV (spreadsheet)</button>
       <button class="btn danger full" data-a="wipe">Erase all data</button>`,
     integ: `<div class="prow static"><div class="grow"><b>Live Activity / Dynamic Island</b><div class="mut xs">${LiveActivity.available() ? 'Connected: workout and rest timer are pushed to the lock screen.' : 'Needs the native iOS wrapper. Rest-timer and workout state are already exposed to it. In the browser you get the docked timer, notifications and tab title.'}</div></div><span class="tag ${LiveActivity.available() ? 'gr' : ''}">${LiveActivity.available() ? 'On' : 'Native only'}</span></div>
       <div class="prow static"><div class="grow"><b>Apple Health · Google Fit · Samsung Health</b><div class="mut xs">${HealthBridge.available() ? 'Plugin detected. Completed workouts are written to your health app.' : 'Two-way sync needs HealthKit / Health Connect, which browsers cannot access. The bridge is wired for a Capacitor build.'}</div></div>${HealthBridge.available() ? `<input type="checkbox" class="sw" data-f="setting" data-k="healthSync" ${s.healthSync ? 'checked' : ''}>` : '<span class="tag">Native only</span>'}</div>
       <div class="prow static"><div class="grow"><b>Apple Watch / Wear OS</b><div class="mut xs">Companion apps are native projects. Today, use the docked timer and haptics on your phone.</div></div><span class="tag">Native only</span></div>
-      ${standalone ? '' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}`,
+      ${standalone ? '' : isIOS() ? '<p class="mut xs">On iPhone: in Safari tap the <b>Share</b> button, then <b>Add to Home Screen</b>. That gives full-screen, offline use, rest-timer notifications, and safer storage for your data.</p>' : '<p class="mut xs">Tip: Add to Home Screen for full-screen, offline use.</p>'}`,
     adv: `<div class="row sp"><div class="grow"><b id="ver-line">ForgeFit v${APP_VER}</b><div class="mut xs">The app looks for updates every time you open it. Your workouts are never touched by an update.</div></div><button class="btn sec" data-a="checkUpdate">Check for updates</button></div>
       <div class="sep"></div>
       <b>Baseline e1RM editor</b>
@@ -603,6 +606,7 @@ function renderMore() {
 A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
 A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };
 R.more = renderMore;
+const _renderMore = renderMore; renderMore = function () { _renderMore(); paintPersist(); }; R.more = renderMore;
 A.obOpen = () => openOnboarding(true);
 A.cxOpen = () => openCustom('');
 A.unitSet = el => { const nu = el.dataset.v; if (nu === unit()) return; if (!confirm(`Convert all saved weights to ${nu}?`)) return; setUnit(nu); scheduleSave(); renderMore(); };
@@ -630,9 +634,13 @@ A.jsonSave = () => {
 };
 const blobToData = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
 function download(name, text, type) { const u = URL.createObjectURL(new Blob([text], { type })), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
-async function buildBackup() {
-  flushSave(); const photos = [], mine = new Set(state.photos.map(p => p.id));
+async function backupPhotos() {
+  const photos = [], mine = new Set(state.photos.map(p => p.id));
   try { for (const p of await idbAll('photos')) if (p.blob && mine.has(p.id)) photos.push({ id: p.id, t: p.t, data: await blobToData(p.blob) }); } catch (e) { }
+  return photos;
+}
+async function buildBackup() { flushSave(); return backupFile(await backupPhotos()); }
+function backupFile(photos) {
   const json = JSON.stringify({ app: 'forgefit', v: 3, exported: Date.now(), person: profName(PROFILES.active), state, photos });
   const name = `forgefit-backup-${ymd(Date.now())}${PROFILES.active === 'main' ? '' : '-' + profName(PROFILES.active).replace(/[^\w-]+/g, '')}.json`;
   try { return new File([json], name, { type: 'application/json' }); } catch (e) { const bl = new Blob([json], { type: 'application/json' }); bl.name = name; return bl; }
@@ -669,12 +677,31 @@ A.importJSON = () => $('#import-in').click();
 async function importFile(file) {
   try {
     const o = JSON.parse(await file.text()); if (!o || o.app !== 'forgefit' || !o.state) throw 0;
-    if (!confirm('Replace ALL current data with this backup?')) return;
-    state = normalize(o.state); resetExCache();
-    for (const p of (o.photos || [])) { try { const b = await (await fetch(p.data)).blob(); await idbPut('photos', { id: p.id, t: p.t, blob: b }); } catch (e) { } }
-    finishRestore('Backup imported');
+    window.__imp = o;
+    const who = o.person || 'Someone', n = (o.state.history || []).length, when = o.exported ? fmtDate(o.exported, { month: 'short', day: 'numeric', year: 'numeric' }) : 'an unknown date';
+    openSheet('Import backup', `<div class="col"><div class="prow static"><div class="grow"><b>${esc(who)}</b><div class="mut xs">${n} workout${n === 1 ? '' : 's'} · saved ${when}</div></div></div>
+      <button class="btn pri full lrow" data-a="impNew">${ic('users')}<span><b>Add as a new person</b><em>Keeps ${esc(profName(PROFILES.active))}'s data. Switch people from the name at the top.</em></span></button>
+      <button class="btn sec full lrow" data-a="impReplace">${ic('repeat')}<span><b>Replace ${esc(profName(PROFILES.active))}'s data</b><em>Use this to restore your own backup on a new phone.</em></span></button></div>`);
   } catch (e) { toast('That file isn’t a ForgeFit backup'); }
 }
+async function importPhotos(o) { for (const p of (o.photos || [])) { try { const b = await (await fetch(p.data)).blob(); await idbPut('photos', { id: p.id, t: p.t, blob: b }); } catch (e) { } } }
+A.impReplace = async () => {
+  const o = window.__imp; if (!o) return;
+  if (!confirm(`Replace ALL of ${profName(PROFILES.active)}'s data with this backup?`)) return;
+  closeSheet(); state = normalize(o.state); resetExCache(); await importPhotos(o); window.__imp = null; finishRestore('Backup imported');
+};
+A.impNew = async () => {
+  const o = window.__imp; if (!o) return;
+  let name = String(o.person && o.person !== 'Me' ? o.person : 'Imported').slice(0, 24), k = 2; const base = name;
+  while (PROFILES.list.some(p => p.name.toLowerCase() === name.toLowerCase())) name = `${base} ${k++}`;
+  const id = 'p' + uid().slice(0, 6), keys = keysFor(id), data = JSON.stringify(normalize(o.state));
+  let ok = false;
+  try { localStorage.setItem(keys.ls, data); ok = true; } catch (e) { }
+  try { await idbPut('kv', { key: keys.idb, value: data }); ok = true; } catch (e) { }
+  if (!ok) { toast('Not enough space on this phone to add that person'); return; }
+  await importPhotos(o); PROFILES.list.push({ id, name }); writeProfiles(); window.__imp = null; closeSheet();
+  toast(`Added ${name}. Switching…`, 1500); setTimeout(() => switchProfile(id), 600);
+};
 function finishRestore(msg) {
   wk().items = wk().items.filter(it => exById(it.exId)); ensureE1(); normSS(); flushSave(); paintTimer(); armTimer(); go('workout'); toast(msg);
 }

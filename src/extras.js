@@ -301,12 +301,14 @@ A.nudgeLater = () => { state.nudgeSnooze = Date.now() + DAY; scheduleSave(); ren
 function backupDue() {
   const now = Date.now(), base = Math.max(state.lastExport || 0, state.createdAt || 0);
   if (!(state.history.length || state.measures.length)) return false;
-  return now - base > 14 * DAY && now > (state.backupSnooze || 0);
+  const ev = bakEvery(); if (!ev) return false;
+  return now - base > ev * DAY && now > (state.backupSnooze || 0);
 }
 function backupBanner() {
   if (!backupDue()) return '';
+  setTimeout(prepQuickBackup, 400);   // get photos ready so the Back up tap can open the share sheet instantly
   const last = state.lastExport, days = Math.floor((Date.now() - Math.max(last || 0, state.createdAt || 0)) / DAY);
-  return `<div class="banner note"><div class="grow"><b>Time for a backup</b><div class="mut sm">${last ? `It has been ${days} days since your last backup.` : 'You have not backed up yet.'} Save a copy to Files, Drive or email in about 10 seconds.</div></div><div class="col gap6"><button class="mini pri" data-a="exportJSON">Back up</button><button class="mini" data-a="backupLater">Later</button></div></div>`;
+  return `<div class="banner note"><div class="grow"><b>Time for a backup</b><div class="mut sm">${last ? `It has been ${days} days since your last backup.` : 'You have not backed up yet.'} Save a copy to Files, Drive or email in about 10 seconds.</div></div><div class="col gap6"><button class="mini pri" data-a="bakQuick">Back up</button><button class="mini" data-a="backupLater">Later</button></div></div>`;
 }
 A.backupLater = () => { state.backupSnooze = Date.now() + 3 * DAY; scheduleSave(); renderWorkout(); };
 function topBanners() {

@@ -2,14 +2,16 @@
 
 A single-file workout PWA (plain HTML/CSS/JS, no frameworks). Netlify publishes this repository as-is.
 
+**Working on the app? Read [`NOTES.md`](NOTES.md) first** (build, release, source map, design rules, tests).
+
 ## Files that get served
 `index.html`, `sw.js`, `manifest.webmanifest`, `icon.svg`, `icon-180/192/512.png`, `reset.html`
 
 ## Editing
-- Source lives in `src/` (`core.js`, `ui.js`, `extras.js`, `more.js`, `features.js`, `style.css`, `body.html`).
+- Source lives in `src/` (see `NOTES.md` for what each file holds; `features.js` stays last).
 - `python3 build.py` stitches it into `index.html`. Commit both the source and the rebuilt `index.html`.
 - **Bump the version** in `sw.js` (`forgefit-vN`) with every release. The app reads that number to know when to update itself.
-- `tests/` holds the Playwright regression suites (`testA`–`testK`, helper `h.js`); they expect to be run from `/tmp/t` with the files served from `/tmp/t/www`.
+- `tests/` holds the Playwright regression suites (`testA`–`testR`, helper `h.js`); they expect to be run from `/tmp/t` with the files served from `/tmp/t/www`.
 
 ## Updating phones
 Push to `main` → Netlify deploys → the app updates itself on next open (More → Check for updates forces it).
