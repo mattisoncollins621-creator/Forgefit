@@ -85,6 +85,17 @@ const H = require('./h'); const { chromium } = require('playwright');
     H.check('in a superset, logging A1 jumps straight to A2', await ev(() => focusIdx === 2));
     await page.click('#focus [data-a=toggleSet]'); await page.waitForTimeout(300); await ev(() => { const p = document.querySelector('#pr [data-a=prNext]'); if (p) p.click(); });
     H.check('…and back to A1', await ev(() => focusIdx === 1));
+    // remove a set right in Focus
+    await ev(() => { focusIdx = 3; focusSet = null; renderWorkout(); });
+    const n0 = await ev(() => wk().items[3].sets.length);
+    await page.click('#focus .fs[data-j="1"]'); await page.click('#focus [data-a=fDelSet]');
+    H.check('Remove set deletes the selected set in Focus', await ev(() => wk().items[3].sets.length) === n0 - 1 && /Set deleted/.test(await page.locator('#toast').innerText()));
+    await page.click('#toast button');
+    H.check('…and Undo puts it back', await ev(() => wk().items[3].sets.length) === n0);
+    const rc = await ev(() => { const it = wk().items[3], ex = exById(it.exId), before = state.muscles[ex.primary].recovery; focusIdx = 3; focusSet = 0; renderWorkout(); document.querySelector('#focus [data-a=toggleSet]').click(); const p = document.querySelector('#pr [data-a=prNext]'); if (p) p.click(); const mid = state.muscles[ex.primary].recovery; focusIdx = 3; focusSet = 0; renderWorkout(); document.querySelector('#focus [data-a=fDelSet]').click(); return { before, mid, after: state.muscles[ex.primary].recovery }; });
+    H.check('removing a logged set gives its fatigue back', rc.mid < rc.before && Math.abs(rc.after - rc.before) < .01, rc);
+    await ev(() => { const it = wk().items[3]; it.sets.splice(1); focusIdx = 3; focusSet = null; renderWorkout(); });
+    H.check('the last remaining set cannot be removed', await page.locator('#focus [data-a=fDelSet]').isDisabled());
     // list toggle
     await page.click('[data-a=viewMode][data-v=list]');
     H.check('List view shows all cards and remembers the choice', await page.locator('#exlist').count() === 1 && await ev(() => state.settings.focus === false));

@@ -52,13 +52,18 @@ function focusHtml() {
       ${rirSeg(i, j, s)}
       <button class="btn ${s.done ? 'sec' : 'pri hero'} full" data-a="toggleSet" data-i="${i}" data-j="${j}">${s.done ? 'Undo this set' : ic('check') + ' Log set'}</button></div>
     <div class="fsets">${setList}</div>
-    <div class="row gap6 wrap pt8"><button class="mini" data-a="addSet" data-i="${i}">${ic('plus')} Set</button><button class="mini" data-a="swap" data-i="${i}">${ic('swap')} Swap</button>
+    <div class="row gap6 wrap pt8"><button class="mini" data-a="addSet" data-i="${i}">${ic('plus')} Set</button><button class="mini" data-a="fDelSet" data-i="${i}" data-j="${j}" ${it.sets.length < 2 ? 'disabled' : ''} aria-label="Remove ${what.toLowerCase()}">${ic('trash')} Remove set</button><button class="mini" data-a="swap" data-i="${i}">${ic('swap')} Swap</button>
       <button class="mini" data-a="tempo" data-i="${i}">${ic('music')} Tempo ${esc(it.tempo || ex.tempo)}</button>${ex.gear.includes('Barbell') ? `<button class="mini" data-a="plates" data-i="${i}">${ic('plates')} Plates</button>` : ''}</div>
     <details class="cue"><summary>Form cue</summary><p>${esc(ex.cue || 'Control the weight, full range of motion.')}</p></details>${all}</div>`;
 }
 const viewBar = fo => `<div class="row sp viewbar"><span class="lbl">${fo ? 'One exercise at a time' : 'All exercises'}</span><div class="segp"><button class="${fo ? 'on' : ''}" data-a="viewMode" data-v="focus">Focus</button><button class="${fo ? '' : 'on'}" data-a="viewMode" data-v="list">List</button></div></div>`;
 A.viewMode = el => { state.settings.focus = el.dataset.v === 'focus'; focusSet = null; scheduleSave(); renderWorkout(); };
 A.fGo = el => { const k = +el.dataset.i; if (k < 0 || k >= wk().items.length) return; focusIdx = k; focusSet = null; renderWorkout(); };
+A.fDelSet = el => {                                  // remove the set on screen (with Undo); an exercise keeps at least one set
+  const i = +el.dataset.i, j = +el.dataset.j, it = wk().items[i]; if (!it || !it.sets[j]) return;
+  if (it.sets.length < 2) { toast('An exercise needs at least one set. Swap or remove the exercise from Edit instead.'); return; }
+  focusSet = Math.min(j, it.sets.length - 2); swipeDelete(i, j); paintSessStats();
+};
 A.fPick = el => { focusIdx = +el.dataset.i; focusSet = +el.dataset.j; renderWorkout(); };
 A.fStep = el => {
   const i = +el.dataset.i, j = +el.dataset.j, k = el.dataset.k, d = +el.dataset.d, it = wk().items[i], s = it && it.sets[j]; if (!s) return;
