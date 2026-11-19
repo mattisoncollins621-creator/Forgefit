@@ -230,7 +230,7 @@ function whatsNew() {
   if (!state.history.length) {
     if (state.seen.tips) return '';
     return `<div class="card"><div class="row sp"><h2 class="h2">Getting started</h2><button class="mini" data-a="seenNew">Got it</button></div>
-      <ul class="newlist"><li>Do a set, then tap its ${ic('check')}. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Every couple of weeks, use <b>More → Back up now</b> so your history is safe.</li></ul></div>`;
+      <ul class="newlist"><li>Do a set, then tap its ${ic('check')}. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Back up once a week from <b>Settings → Data &amp; backup</b> so your history is safe.</li></ul></div>`;
   }
   if (state.seen.v8) return '';
   return `<div class="card"><div class="row sp"><h2 class="h2">What’s new</h2><button class="mini" data-a="seenNew">Got it</button></div>

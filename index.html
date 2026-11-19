@@ -946,7 +946,7 @@ const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const APP_VER = '18';   // filled in by build.py from sw.js so the two can never disagree
+const APP_VER = '19';   // filled in by build.py from sw.js so the two can never disagree
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- exercise database ---------- */
@@ -1306,7 +1306,7 @@ function flushSave() {
   try { localStorage.setItem(LS_KEY, data); saveFail = false; }
   catch (e) {
     try { sessionStorage.setItem(LS_KEY, data); } catch (_) { }
-    if (!saveFail) { saveFail = true; toast('Storage is nearly full. Export a backup from More → Data.'); }
+    if (!saveFail) { saveFail = true; toast('Storage is nearly full. Export a backup from Settings → Data & backup.'); }
   }
   clearTimeout(idbT);
   idbT = setTimeout(() => { idbPut('kv', { key: IDB_STATE, value: data }).catch(() => { }); }, 3000);
@@ -1670,7 +1670,7 @@ function generateWorkout(quiet) {
   if (sp === 'freshness') { smart = smartDay(); sp = smart.d; }
   let pool = dayPool(sp);
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
-  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
+  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in Settings → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
   /* weekly set targets: muscles behind on this week's sets get priority and an extra set, muscles already at the
      top of their range are skipped (main lifts stay but drop to 2 sets). Needs a little history to be meaningful. */
@@ -2975,7 +2975,7 @@ function whatsNew() {
   if (!state.history.length) {
     if (state.seen.tips) return '';
     return `<div class="card"><div class="row sp"><h2 class="h2">Getting started</h2><button class="mini" data-a="seenNew">Got it</button></div>
-      <ul class="newlist"><li>Do a set, then tap its ${ic('check')}. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Every couple of weeks, use <b>More → Back up now</b> so your history is safe.</li></ul></div>`;
+      <ul class="newlist"><li>Do a set, then tap its ${ic('check')}. Your rest timer starts by itself.</li><li>Tap any <b>weight or reps</b> box to change it. <b>Swipe a set</b> left to delete, right to copy.</li><li>When you finish, tap <b>Complete &amp; log session</b>. That is what saves your progress.</li><li>Back up once a week from <b>Settings → Data &amp; backup</b> so your history is safe.</li></ul></div>`;
   }
   if (state.seen.v8) return '';
   return `<div class="card"><div class="row sp"><h2 class="h2">What’s new</h2><button class="mini" data-a="seenNew">Got it</button></div>
@@ -3667,7 +3667,7 @@ function paintOb() {
       <div class="field"><label>Preferred split</label><div class="col gap6">${big('splitPref', 'freshness', 'Smart (by muscle freshness)', 'Picks what is recovered')}${big('splitPref', 'ppl', 'Push / Pull / Legs')}${big('splitPref', 'ul', 'Upper / Lower')}${big('splitPref', 'full', 'Full body')}</div></div>
       <div class="field"><label>Session length</label><div class="chips">${[30, 45, 60, 75, 90].map(n => ch('sessionMin', n, n + ' min')).join('')}</div></div>
       <div class="field"><label>Add a cardio finisher?</label><div class="chips">${ch('cardio', 'true', 'Yes')}${ch('cardio', 'false', 'No')}</div></div></div>`,
-    `<h1>Your equipment</h1><p class="mut">The generator only picks exercises you can do. Fine-tune later in More → Equipment.</p><div class="col">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => big('preset', n, esc(n), GEAR_PRESETS[n] === '*' ? 'Everything incl. machines & cables' : esc((GEAR_PRESETS[n] || Object.keys(state.gearProfiles[n]).filter(k => state.gearProfiles[n][k])).map(gearLabel).join(', ')))).join('')}</div>`
+    `<h1>Your equipment</h1><p class="mut">The generator only picks exercises you can do. Fine-tune later in Settings → Equipment.</p><div class="col">${[...Object.keys(GEAR_PRESETS), ...Object.keys(state.gearProfiles)].map(n => big('preset', n, esc(n), GEAR_PRESETS[n] === '*' ? 'Everything incl. machines & cables' : esc((GEAR_PRESETS[n] || Object.keys(state.gearProfiles[n]).filter(k => state.gearProfiles[n][k])).map(gearLabel).join(', ')))).join('')}</div>`
   ];
   const last = o.step === steps.length - 1;
   $('#onboard').innerHTML = `<div class="ob-in"><div class="row sp"><div class="dots">${steps.map((_, i) => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('')}</div><button class="link" data-a="obSkip">${o.redo ? 'Cancel' : 'Skip'}</button></div>

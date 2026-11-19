@@ -383,7 +383,7 @@ function flushSave() {
   try { localStorage.setItem(LS_KEY, data); saveFail = false; }
   catch (e) {
     try { sessionStorage.setItem(LS_KEY, data); } catch (_) { }
-    if (!saveFail) { saveFail = true; toast('Storage is nearly full. Export a backup from More → Data.'); }
+    if (!saveFail) { saveFail = true; toast('Storage is nearly full. Export a backup from Settings → Data & backup.'); }
   }
   clearTimeout(idbT);
   idbT = setTimeout(() => { idbPut('kv', { key: IDB_STATE, value: data }).catch(() => { }); }, 3000);

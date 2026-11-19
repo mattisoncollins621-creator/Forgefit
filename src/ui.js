@@ -136,7 +136,7 @@ function generateWorkout(quiet) {
   if (sp === 'freshness') { smart = smartDay(); sp = smart.d; }
   let pool = dayPool(sp);
   const base = { startedAt: null, name: (SPLIT_NAME[sp] || 'Custom') + ' Session', split: sp, note: '', items: [] };
-  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in More → Equipment.'; scheduleSave(); renderWorkout(); return; }
+  if (!pool.length) { state.workout = carrySession(wk(), base); state.workout.note = 'No exercises match your equipment. Turn on gear in Settings → Equipment.'; scheduleSave(); renderWorkout(); return; }
   const recent = new Set(state.history.slice(0, 2).flatMap(h => (h.items || []).map(i => i.exId)));
   /* weekly set targets: muscles behind on this week's sets get priority and an extra set, muscles already at the
      top of their range are skipped (main lifts stay but drop to 2 sets). Needs a little history to be meaningful. */
