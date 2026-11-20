@@ -20,7 +20,7 @@ The Netlify site must stay **public**. Netlify "access protection" makes `sw.js`
 | `extras.js` | Swipe gestures, banners, people/profiles, exercise info sheet, stalls, heatmap data, weekly sets |
 | `more.js` | Exercise history sheet, onboarding pieces, misc tools |
 | `session.js` | Plan rows, live session (start/pause/end/edit), calorie estimate, achievements, finish summary |
-| `anim.js` | Exercise animations: a side-view line figure posed per movement (`MOVES`, `EX_MOVE` maps exercise id → movement), `figSvg(ex)`, one shared animation loop; small tiles zoom to the figure (`fitBox`) |
+| `anim.js` | Exercise animations. Each movement in `MOVES` is two poses (`a`, `b`: hip, torso angle, ankles, wrists; knees/elbows solved by IK), with optional `mid` (curved path), `seq` (joints that lead/lag), `con` (`'ba'` when the lift runs b→a), `prone`, `alt` (switch legs each rep), `vb` (wider frame). `EX_MOVE` maps exercise id → movement. Drawn as a filled body (`torsoPath`, `legPath`, `armPath`, `headPath`; `part()` adds the outline layer). `animK` gives real rep timing: hold, slow lowering, short pause, drive. One shared loop animates what's on screen; small tiles zoom to the figure (`fitBox`) |
 | `video.js` | How-to videos: `VIDEOS` (from `videos.json`), `thumbBtn(ex,size)` animated tile with play badge, `A.exVideo` in-app player (youtube-nocookie embed, offline fallback, per-person override `state.vidOver`) |
 | `recovery.js` | Recovery tab: readiness ring, flip-card body map (`bodySvg`, also reused elsewhere), single-track sliders |
 | `focus.js` | Focus view (one exercise at a time) and auto-advance |

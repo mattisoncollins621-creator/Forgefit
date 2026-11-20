@@ -12,6 +12,22 @@ const H = require('./h'); const { chromium } = require('playwright');
     const cov = await ev(() => { const ex = BASE_EX; return { n: ex.length, noFig: ex.filter(e => !e.cardio && !figSvg(e)).map(e => e.id), noVid: ex.filter(e => !(VIDEOS[e.id] && /^[\w-]{11}$/.test(VIDEOS[e.id][0]))).map(e => e.id), extra: Object.keys(VIDEOS).filter(k => !exById(k)) }; });
     H.check('every strength exercise has an animation', cov.noFig.length === 0, cov.noFig);
     H.check('every exercise has a video picked', cov.noVid.length === 0 && cov.extra.length === 0, cov);
+    console.log('== S1b lifelike drawing + rep timing');
+    const lf = await ev(() => {
+      const svg = figMarkup('squat', .5), sq = MOVES.squat, cu = MOVES.curl, T = m => m.d * 1150;
+      const at = (m, f) => animK(m, f * T(m))[0];
+      return { filled: /class="ol"/.test(svg) && /class="bn"/.test(svg) && /class="bf"/.test(svg) && /class="shd"/.test(svg),
+        sqTop: at(sq, .05), sqDown: at(sq, .4), sqBottom: at(sq, .63), sqUp: at(sq, .85), cuTop: at(cu, .05), cuBottom: at(cu, .63),
+        alt: JSON.stringify(poseAt(MOVES.lunge, 1, 0).f) !== JSON.stringify(poseAt(MOVES.lunge, 1, 1).f),
+        seq: (() => { const h = MOVES.hinge, p1 = poseAt(h, .2, 0); return p1.t === h.a.t; })(),
+        all: Object.keys(MOVES).every(n => { const x = figMarkup(n, .5, 0, 0); return x.length > 200 && !/NaN|undefined/.test(x); }) };
+    });
+    H.check('figures are filled bodies with an outline layer and a floor shadow', lf.filled);
+    H.check('squat rep: pause standing, lower, short pause at the bottom, stand up', lf.sqTop === 0 && lf.sqDown > .3 && lf.sqDown < 1 && lf.sqBottom === 1 && lf.sqUp < 1 && lf.sqUp > 0, lf);
+    H.check('curl rep: squeeze at the top, lower to straight arms', lf.cuTop === 1 && lf.cuBottom === 0, lf);
+    H.check('lunges switch legs every rep', lf.alt);
+    H.check('deadlift: torso angle holds while the knees straighten', lf.seq);
+    H.check('every movement draws cleanly (no NaN)', lf.all);
     console.log('== S2 plan thumbnails');
     await ev(() => { state.split = 'push'; generateWorkout(); window.scrollTo(0, 0); });
     const pl = await ev(() => { const rows = [...document.querySelectorAll('article.plan')]; return { rows: rows.length, th: rows.filter(r => r.querySelector('.thumb[data-a=exVideo] svg.anim[data-mv]')).length, badge: rows.filter(r => r.querySelector('.thumb .pbadge')).length, nested: document.querySelectorAll('button button').length }; });

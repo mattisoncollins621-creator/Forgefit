@@ -882,12 +882,7 @@ svg.anim .pad{fill:var(--mut)}
 .thumb.md{width:76px;height:82px;border-radius:14px}
 .thumb.lg{width:100%;height:196px;border-radius:16px}
 .thumb.lg svg.anim{width:auto;height:100%}
-.thumb.sm svg.anim .lg,.thumb.sm svg.anim .ar,.thumb.xs svg.anim .lg,.thumb.xs svg.anim .ar{stroke-width:2.2}
-.thumb.sm svg.anim .tr,.thumb.xs svg.anim .tr{stroke-width:2.8}
 .thumb.sm svg.anim .fl,.thumb.xs svg.anim .fl{stroke-width:1}
-.thumb.md svg.anim .lg,.thumb.md svg.anim .ar{stroke-width:2.8}.thumb.md svg.anim .tr{stroke-width:3.6}
-.thumb.lg svg.anim .lg,.thumb.lg svg.anim .ar,svg.anim.big .lg,svg.anim.big .ar{stroke-width:4.6}
-.thumb.lg svg.anim .tr,svg.anim.big .tr{stroke-width:6}
 .thumb.nofig .tbig{width:24px;height:24px;color:var(--mut)}
 .pbadge{position:absolute;right:3px;bottom:3px;width:17px;height:17px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .pbadge .ic{width:9px;height:9px;color:#1A0B02;margin-left:1px}
@@ -906,7 +901,6 @@ svg.anim .pad{fill:var(--mut)}
 .vmove{display:flex;gap:10px;align-items:flex-start}
 .vfig{flex:none;width:92px;height:100px;border-radius:12px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 .vfig svg.anim{width:100%;height:100%}
-.vfig svg.anim.big .lg,.vfig svg.anim.big .ar{stroke-width:2.8}.vfig svg.anim.big .tr{stroke-width:3.6}
 .btn.ghost{background:transparent;border:1px solid transparent;color:var(--tx2)}
 .btn.ghost:active{background:var(--press)}
 .btn.sm{min-height:36px;padding:7px 12px;font-size:13px}
@@ -916,3 +910,13 @@ svg.anim .pad{fill:var(--mut)}
 .thumb.sm .pbadge{width:18px;height:18px;right:-6px;bottom:-6px;border:2px solid var(--card)}
 .thumb.md .pbadge{width:24px;height:24px;right:-7px;bottom:-7px;border:2px solid var(--card)}
 .thumb.sm svg.anim,.thumb.md svg.anim{border-radius:inherit}
+/* v21: filled figure. Near side in the text colour, far side mixed toward the tile, a thin tile-coloured
+   outline so overlapping limbs stay readable, and a soft floor shadow. */
+svg.anim .ol{vector-effect:none;fill:var(--card2);stroke:var(--card2);stroke-width:1.5;stroke-linejoin:round}
+svg.anim .bn,svg.anim .bf{stroke:none}
+svg.anim .bn{fill:currentColor}
+svg.anim .bf{fill:currentColor;opacity:.42}
+@supports (color:color-mix(in srgb,red,blue)){svg.anim .bf{fill:color-mix(in srgb,currentColor 44%,var(--card2));opacity:1}}
+svg.anim .shd{fill:#000;opacity:.32}
+:root[data-theme=light] svg.anim .shd{opacity:.1}
+svg.anim rect.db{stroke:none}
