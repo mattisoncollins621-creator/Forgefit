@@ -31,7 +31,7 @@ function focusHtml() {
   const all = nextOpen(0) < 0 ? `<div class="banner ok fdone"><div class="grow"><b>Every set is logged</b><div class="mut sm">Nice work. End the workout to see your summary.</div></div><button class="btn pri" data-a="endWorkout">Finish</button></div>` : '';
   if (!ex) return `<div class="card focus" id="focus">${nav}</div>`;
   if (it.cardio) {
-    return `<div class="card focus" id="focus">${nav}<div class="mut xs fcount">Exercise ${i + 1} of ${n}</div><div class="row gap6 wrap"><span class="tag">Cardio</span></div><h2 class="fname">${esc(ex.name)}</h2>
+    return `<div class="card focus" id="focus">${nav}<div class="mut xs fcount">Exercise ${i + 1} of ${n}</div><div class="row gap6 wrap"><span class="tag">Cardio</span></div><div class="fhead"><div class="grow"><h2 class="fname">${esc(ex.name)}</h2></div>${thumbBtn(ex, 'md')}</div>
       <div class="steps one">${`<div class="stepper"><span class="flab">Minutes</span><div class="sctl"><button data-a="fStepC" data-i="${i}" data-d="-1" aria-label="Fewer minutes">${ic('minus')}</button><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}" aria-label="Minutes"><button data-a="fStepC" data-i="${i}" data-d="1" aria-label="More minutes">${ic('plus')}</button></div></div>`}</div>
       <button class="btn ${it.done ? 'sec' : 'pri hero'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? ic('check') + ' Completed · tap to undo' : ic('check') + ' Mark complete'}</button>${all}</div>`;
   }
@@ -45,7 +45,7 @@ function focusHtml() {
   return `<div class="card focus${sessPaused() ? ' dimmed' : ''}" id="focus" data-i="${i}">${nav}
     <div class="mut xs fcount">Exercise ${i + 1} of ${n}</div>
     <div class="row gap6 wrap"><span class="tag ${recCol(pct)}">${esc(ex.primary)} ${pct}%</span>${mainTag(it)}${stalledTag(ex)}${it.superset ? `<span class="tag vi">Superset ${esc(it.superset)}</span>` : ''}</div>
-    <h2 class="fname">${esc(ex.name)}</h2>${last ? `<div class="mut sm">Last time: ${last.slice(0, 4).map(x => `${x.w}×${x.r}`).join(' · ')}</div>` : ''}
+    <div class="fhead"><div class="grow"><h2 class="fname">${esc(ex.name)}</h2>${last ? `<div class="mut sm">Last time: ${last.slice(0, 4).map(x => `${x.w}×${x.r}`).join(' · ')}</div>` : ''}</div>${thumbBtn(ex, 'md')}</div>
     ${coach}
     <div class="fset ${s.done ? 'done' : ''}"><div class="row sp"><b class="fwhat">${what}</b>${s.done ? `<span class="tag gr">${ic('check', 'sm')} Logged</span>` : ''}</div>
       <div class="steps">${stepper(i, j, 'weight', unit(), s.weight, ph ? ph.w : '', 'decimal')}${stepper(i, j, 'reps', 'Reps', s.reps, ph ? ph.r : '', 'numeric')}</div>

@@ -486,7 +486,7 @@ function paintLib() {
   let list = allEx(); if (lib.f !== 'all') list = byChip(list, lib.f);
   if (q) list = list.filter(e => (e.name + ' ' + e.primary + ' ' + (e.alias || '')).toLowerCase().includes(q));
   list.sort((a, b) => a.name.localeCompare(b.name));
-  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib"><div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : ic('lock')}</span></button>`).join('') || '<div class="empty">No matches.</div>';
+  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib">${figSvg(e) ? `<span class="thumb xs">${figSvg(e)}</span>` : ''}<div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : ic('lock')}</span></button>`).join('') || '<div class="empty">No matches.</div>';
 }
 A.libF = el => { lib.f = el.dataset.v; paintLib(); };
 F.libq = el => { lib.q = el.value; paintLib(); };
@@ -498,12 +498,13 @@ A.exInfo = el => {
   const missing = (ex.gear || []).filter(g => !state.gear[g]);
   openSheet(ex.name, `<div class="col">
     <div class="row gap6 wrap"><span class="tag or">${esc(ex.primary)}</span>${(ex.secondary || []).map(m => { const w = exW(ex)[m]; return `<span class="tag">${esc(m)}${w && w !== .5 ? ' ' + Math.round(w * 100) + '%' : ''}</span>`; }).join('')}<span class="tag">${ex.cardio ? 'Cardio' : esc(ex.type)}</span></div>
+    ${thumbBtn(ex, 'lg')}
     ${ex.cardio ? '' : `<div class="exmap">${bodyPair(exW(ex), m => `${m}: ${Math.round((exW(ex)[m] || 0) * 100)}%`)}<p class="mut xs center">Brighter means it works that muscle harder.</p></div>`}
     <p class="mut sm">${ex.gear.length ? 'Equipment: ' + esc(ex.gear.map(gearLabel).join(', ')) : 'No equipment needed'}${missing.length ? ` · <span class="am">you have ${esc(missing.map(gearLabel).join(', '))} switched off</span>` : ''}</p>
     <ol class="how">${steps.map((t, k) => `<li><b>${steps.length > 1 ? labels[k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol>
     ${ex.cardio ? '' : `<div class="prow static"><div class="grow"><b>Your numbers</b><div class="mut xs">${state.e1rm[ex.id] ? 'Estimated 1RM ' + state.e1rm[ex.id] + ' ' + unit() : 'No estimate yet'}${pr ? ' · best ' + Math.round(pr.weight) + ' × ' + pr.reps : ''}${l ? ' · last ' + l.slice(0, 4).map(s => s.w + '×' + s.r).join(', ') : ''}</div></div></div>`}
     ${exTools(ex)}
-    <a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">${ic('play', 'fill')} Watch form videos</a>
+    ${vidOf(ex) ? '' : `<a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">${ic('play', 'fill')} Watch form videos</a>`}
     <div class="grid2">${fromLib ? `<button class="btn sec" data-a="libOpen">${ic('back')} Library</button>` : '<button class="btn sec" data-a="closeSheet">Close</button>'}<button class="btn pri" data-a="libAdd" data-id="${ex.id}">${ic('plus')} Add to workout</button></div></div>`);
 };
 A.libAdd = el => {

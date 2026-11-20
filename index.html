@@ -868,6 +868,69 @@ svg.scrub{touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-sele
   .srow input,.srow select{font-size:16px}
   .grid3 .field input{font-size:16px}
 }
+
+/* exercise animations (v20) */
+svg.anim{display:block;color:var(--tx2)}
+svg.anim path,svg.anim circle{vector-effect:non-scaling-stroke}
+svg.anim .fl{stroke:var(--bases);stroke-width:1.5}
+svg.anim .lg,svg.anim .ar,svg.anim .tr{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+svg.anim .lg,svg.anim .ar{stroke-width:3.4}
+svg.anim .tr{stroke-width:4.4}
+svg.anim .far{opacity:.38}
+svg.anim .hd{fill:currentColor}
+svg.anim .pl{fill:rgba(249,115,22,.16);stroke:var(--or);stroke-width:2}
+svg.anim .plh{fill:var(--or)}
+svg.anim .db{fill:var(--or)}
+svg.anim .cb{stroke:var(--or-t);stroke-width:1.2;opacity:.8;fill:none}
+svg.anim .pul{fill:none;stroke:var(--mut);stroke-width:1.4}
+svg.anim .eq{fill:var(--trk);stroke:var(--bases);stroke-width:1}
+svg.anim .eqd,svg.anim .eqw{stroke:var(--mut);stroke-linecap:round;fill:none}
+svg.anim .eqd{stroke-width:1.4;opacity:.55}
+svg.anim .eqw{stroke-width:2.6}
+svg.anim .eqd2{fill:var(--trk)}
+svg.anim .pad{fill:var(--mut)}
+/* v20: exercise thumbnails and the how-to player */
+.thumb{position:relative;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:12px;background:var(--card2);border:1px solid var(--line);overflow:hidden;color:var(--tx2)}
+.thumb svg.anim{width:100%;height:100%}
+.thumb.sm{width:50px;height:54px;align-self:flex-start}
+.thumb.xs{width:38px;height:42px;border-radius:10px}
+.thumb.md{width:76px;height:82px;border-radius:14px}
+.thumb.lg{width:100%;height:196px;border-radius:16px}
+.thumb.lg svg.anim{width:auto;height:100%}
+.thumb.sm svg.anim .lg,.thumb.sm svg.anim .ar,.thumb.xs svg.anim .lg,.thumb.xs svg.anim .ar{stroke-width:2.2}
+.thumb.sm svg.anim .tr,.thumb.xs svg.anim .tr{stroke-width:2.8}
+.thumb.sm svg.anim .fl,.thumb.xs svg.anim .fl{stroke-width:1}
+.thumb.md svg.anim .lg,.thumb.md svg.anim .ar{stroke-width:2.8}.thumb.md svg.anim .tr{stroke-width:3.6}
+.thumb.lg svg.anim .lg,.thumb.lg svg.anim .ar,svg.anim.big .lg,svg.anim.big .ar{stroke-width:4.6}
+.thumb.lg svg.anim .tr,svg.anim.big .tr{stroke-width:6}
+.thumb.nofig .tbig{width:24px;height:24px;color:var(--mut)}
+.pbadge{position:absolute;right:3px;bottom:3px;width:17px;height:17px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.pbadge .ic{width:9px;height:9px;color:#1A0B02;margin-left:1px}
+.thumb.md .pbadge{width:22px;height:22px;right:5px;bottom:5px}.thumb.md .pbadge .ic{width:11px;height:11px}
+.thumb.lg .pbadge{width:44px;height:44px;right:auto;bottom:auto;left:calc(50% + 44px);top:calc(50% - 22px)}
+.thumb.lg .pbadge .ic{width:20px;height:20px;margin-left:2px}
+.tcap{position:absolute;left:12px;bottom:10px;font-size:12px;font-weight:600;color:var(--tx2)}
+.thumb:active{background:var(--press)}
+.fhead{display:flex;align-items:flex-start;gap:12px}.fhead .fname{margin-top:2px}
+.vwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vwrap.fig{aspect-ratio:auto;background:var(--card2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+.vwrap.fig svg.anim{height:170px;width:auto}
+.voff{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;font-size:13px;color:var(--tx2);max-width:300px}
+.vtitle{margin-top:-4px}
+.vmove{display:flex;gap:10px;align-items:flex-start}
+.vfig{flex:none;width:92px;height:100px;border-radius:12px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.vfig svg.anim{width:100%;height:100%}
+.vfig svg.anim.big .lg,.vfig svg.anim.big .ar{stroke-width:2.8}.vfig svg.anim.big .tr{stroke-width:3.6}
+.btn.ghost{background:transparent;border:1px solid transparent;color:var(--tx2)}
+.btn.ghost:active{background:var(--press)}
+.btn.sm{min-height:36px;padding:7px 12px;font-size:13px}
+.prow .thumb.xs{align-self:center}
+/* badge sits on the tile's corner so it never covers the figure */
+.thumb.sm,.thumb.md{overflow:visible}
+.thumb.sm .pbadge{width:18px;height:18px;right:-6px;bottom:-6px;border:2px solid var(--card)}
+.thumb.md .pbadge{width:24px;height:24px;right:-7px;bottom:-7px;border:2px solid var(--card)}
+.thumb.sm svg.anim,.thumb.md svg.anim{border-radius:inherit}
 </style>
 </head>
 <body>
@@ -946,7 +1009,7 @@ const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const APP_VER = '19';   // filled in by build.py from sw.js so the two can never disagree
+const APP_VER = '20';   // filled in by build.py from sw.js so the two can never disagree
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- exercise database ---------- */
@@ -1766,7 +1829,7 @@ function cardHtml(i) {
   if (!sessActive() && !planOpen.has(it.id || i)) return planRowHtml(i);
   const ss = it.superset ? `<span class="tag vi">${it.superset}</span>` : '';
   if (it.cardio) {
-    return `<article class="card ex" data-ex="${i}"><div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6"><span class="tag">Cardio</span>${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut sm">${esc(ex.cue || '')}</div></div>
+    return `<article class="card ex" data-ex="${i}"><div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>${thumbBtn(ex, 'sm')}<div class="grow"><div class="row gap6"><span class="tag">Cardio</span>${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut sm">${esc(ex.cue || '')}</div></div>
       <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div>
       <div class="grid2 pt8"><div class="field"><label>Minutes</label><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}"></div>
       ${ex.dist ? `<div class="field"><label>Distance (${unit() === 'kg' ? 'km' : 'mi'})</label><input inputmode="decimal" value="${it.dist || ''}" data-f="cardio" data-k="dist" data-i="${i}" placeholder="optional"></div>` : '<div></div>'}</div>
@@ -1789,7 +1852,7 @@ function cardHtml(i) {
   const coach = hint ? `<button class="coach up" data-a="bump" data-i="${i}">${ic('arrow-up')} ${esc(hint.msg)}</button>` : fat ? `<button class="coach dn" data-a="trim" data-i="${i}">${ic('arrow-down')} ${esc(fat.msg)}</button>` : calibBtn(ex, i);
   const canWarm = state.settings.warmups && ex.type === 'compound' && !ex.noE1 && !ex.bw && !it.sets.some(s => s.type === 'warmup');
   return `<article class="card ex" data-ex="${i}">
-    <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${mainTag(it)}${ss}</div>
+    <div class="row sp top gap6"><button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>${thumbBtn(ex, 'sm')}<div class="grow"><div class="row gap6 wrap"><span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span><span class="mut xs">e1RM <b>${ex.noE1 ? '—' : state.e1rm[ex.id] + ' ' + unit()}</b></span>${stalledTag(ex)}${mainTag(it)}${ss}</div>
       <h3 class="exn">${esc(ex.name)}</h3>${last ? `<div class="mut xs">Last: ${last.slice(0, 4).map(s => `${s.w}×${s.r}`).join(' · ')}</div>` : ''}${noteLine(ex.id)}</div>
       <div class="row gap6">${planCollapse(i)}<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">${ic('swap')}</button><button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div>
     ${coach}
@@ -2684,7 +2747,7 @@ function paintLib() {
   let list = allEx(); if (lib.f !== 'all') list = byChip(list, lib.f);
   if (q) list = list.filter(e => (e.name + ' ' + e.primary + ' ' + (e.alias || '')).toLowerCase().includes(q));
   list.sort((a, b) => a.name.localeCompare(b.name));
-  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib"><div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : ic('lock')}</span></button>`).join('') || '<div class="empty">No matches.</div>';
+  $('#lib-list').innerHTML = list.slice(0, 400).map(e => `<button class="prow" data-a="exInfo" data-id="${e.id}" data-from="lib">${figSvg(e) ? `<span class="thumb xs">${figSvg(e)}</span>` : ''}<div class="grow"><b>${isFav(e.id) ? ic('star', 'fill fav') + ' ' : ''}${esc(e.name)}</b><div class="mut xs">${esc(e.primary)}${(e.secondary || []).length ? ' + ' + esc(e.secondary.join(', ')) : ''}</div></div><span class="mut xs">${hasGear(e) ? '' : ic('lock')}</span></button>`).join('') || '<div class="empty">No matches.</div>';
 }
 A.libF = el => { lib.f = el.dataset.v; paintLib(); };
 F.libq = el => { lib.q = el.value; paintLib(); };
@@ -2696,12 +2759,13 @@ A.exInfo = el => {
   const missing = (ex.gear || []).filter(g => !state.gear[g]);
   openSheet(ex.name, `<div class="col">
     <div class="row gap6 wrap"><span class="tag or">${esc(ex.primary)}</span>${(ex.secondary || []).map(m => { const w = exW(ex)[m]; return `<span class="tag">${esc(m)}${w && w !== .5 ? ' ' + Math.round(w * 100) + '%' : ''}</span>`; }).join('')}<span class="tag">${ex.cardio ? 'Cardio' : esc(ex.type)}</span></div>
+    ${thumbBtn(ex, 'lg')}
     ${ex.cardio ? '' : `<div class="exmap">${bodyPair(exW(ex), m => `${m}: ${Math.round((exW(ex)[m] || 0) * 100)}%`)}<p class="mut xs center">Brighter means it works that muscle harder.</p></div>`}
     <p class="mut sm">${ex.gear.length ? 'Equipment: ' + esc(ex.gear.map(gearLabel).join(', ')) : 'No equipment needed'}${missing.length ? ` · <span class="am">you have ${esc(missing.map(gearLabel).join(', '))} switched off</span>` : ''}</p>
     <ol class="how">${steps.map((t, k) => `<li><b>${steps.length > 1 ? labels[k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol>
     ${ex.cardio ? '' : `<div class="prow static"><div class="grow"><b>Your numbers</b><div class="mut xs">${state.e1rm[ex.id] ? 'Estimated 1RM ' + state.e1rm[ex.id] + ' ' + unit() : 'No estimate yet'}${pr ? ' · best ' + Math.round(pr.weight) + ' × ' + pr.reps : ''}${l ? ' · last ' + l.slice(0, 4).map(s => s.w + '×' + s.r).join(', ') : ''}</div></div></div>`}
     ${exTools(ex)}
-    <a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">${ic('play', 'fill')} Watch form videos</a>
+    ${vidOf(ex) ? '' : `<a class="btn sec full" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer">${ic('play', 'fill')} Watch form videos</a>`}
     <div class="grid2">${fromLib ? `<button class="btn sec" data-a="libOpen">${ic('back')} Library</button>` : '<button class="btn sec" data-a="closeSheet">Close</button>'}<button class="btn pri" data-a="libAdd" data-id="${ex.id}">${ic('plus')} Add to workout</button></div></div>`);
 };
 A.libAdd = el => {
@@ -3013,7 +3077,7 @@ function planRowHtml(i) {
   const pct = it.cardio ? 0 : rec(ex.primary), bc = recCol(pct);
   const tag = it.cardio ? '<span class="tag">Cardio</span>' : `<span class="tag ${bc}">${esc(ex.primary)} ${pct}%</span>`;
   return `<article class="card ex plan" data-ex="${i}"><div class="row gap6 top">
-    <button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+    <button class="grip" data-drag aria-label="Drag to reorder" title="Hold and drag to reorder"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>${thumbBtn(ex, 'sm')}
     <button class="planmain grow" data-a="planExp" data-i="${i}" aria-label="Edit sets for ${esc(ex.name)}"><div class="row gap6 wrap">${tag}${mainTag(it)}${it.cardio ? '' : stalledTag(ex)}${ss}</div><h3 class="exn">${esc(ex.name)}</h3><div class="mut xs">${esc(setsSummary(it))} · tap to edit sets</div>${!it.cardio && noteOf(ex.id) ? `<div class="planote">${ic('pencil', 'sm')} ${esc(noteOf(ex.id))}</div>` : ''}</button>
     <div class="row gap6">${it.cardio ? '' : `<button class="ib" data-a="swap" data-i="${i}" aria-label="Swap exercise">${ic('swap')}</button>`}<button class="ib" data-a="exMenu" data-i="${i}" aria-label="Exercise options">${ic('more')}</button></div></div></article>`;
 }
@@ -3194,6 +3258,280 @@ A.sessShare = () => {
   shareText(lines.join('\n'), 'My workout');
 };
 
+/* ---------- animated exercise figures (original line drawings, no video, works offline) ----------
+   A side-view figure is posed by its hip, torso angle, foot and hand positions; knees and elbows are
+   solved like real joints (two-bone IK). Each movement pattern is two poses (start, end) played as a
+   loop with short holds. Angles: 0 = straight down, 90 = forward (facing right), 180 = straight up. */
+const AN = { torso: 29, ua: 15, fa: 14, th: 20, sh: 19, head: 6.4, neck: 4, floor: 92 };
+const v2 = (a, l) => [Math.sin(a * Math.PI / 180) * l, Math.cos(a * Math.PI / 180) * l];
+const add = (p, q) => [p[0] + q[0], p[1] + q[1]];
+const lerp = (a, b, k) => a + (b - a) * k;
+function ik(root, tgt, a, b, pref) {                 // knee/elbow position for a two-bone limb
+  let dx = tgt[0] - root[0], dy = tgt[1] - root[1], d = Math.hypot(dx, dy) || .001;
+  const dc = clamp(d, Math.abs(a - b) + .01, a + b - .01), base = Math.atan2(dy, dx), ca = Math.acos(clamp((a * a + dc * dc - b * b) / (2 * a * dc), -1, 1));
+  const c1 = [root[0] + Math.cos(base + ca) * a, root[1] + Math.sin(base + ca) * a], c2 = [root[0] + Math.cos(base - ca) * a, root[1] + Math.sin(base - ca) * a];
+  const s = p => (p[0] - root[0]) * pref[0] + (p[1] - root[1]) * pref[1], j = s(c1) >= s(c2) ? c1 : c2;
+  const jd = Math.hypot(tgt[0] - j[0], tgt[1] - j[1]) || .001, end = d > a + b ? [j[0] + (tgt[0] - j[0]) / jd * b, j[1] + (tgt[1] - j[1]) / jd * b] : tgt;
+  return [j, end];
+}
+/* pose: h hip [x,y] · t torso angle · f [near ankle, far ankle] · w [near wrist, far wrist] · kp/ep bend preference */
+function solve(P) {
+  const S = add(P.h, v2(P.t, AN.torso)), head = add(S, v2(P.t + (P.hd || 0), AN.neck + AN.head));
+  const leg = (A, k) => { const [K, E] = ik(P.h, A, AN.th, AN.sh, P.kp || [1, 0]); return [P.h, K, E]; };
+  const arm = (W) => { const [E, H] = ik(S, W, AN.ua, AN.fa, P.ep || [0, 1]); return [S, E, H]; };
+  return { S, head, legs: P.f.map(leg), arms: P.w.map(arm), t: P.t };
+}
+function mix(A, B, k) {
+  const m = (a, b) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k)];
+  return { h: m(A.h, B.h), t: lerp(A.t, B.t, k), hd: lerp(A.hd || 0, B.hd || 0, k), f: A.f.map((p, i) => m(p, B.f[i])), w: A.w.map((p, i) => m(p, B.w[i])), kp: A.kp, ep: A.ep };
+}
+const FLR = AN.floor - 1.6;                            // ankle height when standing on the floor
+const stand = (x = 46) => ({ h: [x, FLR - 38.6], t: 180, f: [[x + 1, FLR], [x + 3, FLR]], w: [[x + 1, FLR - 39], [x + 3, FLR - 40]] });
+const P = (o, base) => Object.assign({}, base || {}, o);
+/* props: bar (plate disc at a joint), db (dumbbell), cable (pulley → hand), bench / box / pad / rack (static shapes) */
+const MOVES = {
+  squat: { d: 2.6, a: P({ h: [44, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[41, 25], [43, 24]], ep: [0, 1] }), b: P({ h: [33, 70], t: 138, f: [[47, FLR], [49, FLR]], w: [[30, 44], [32, 43]], ep: [0, 1] }), pr: [{ k: 'bar', at: 'back', r: 8 }] },
+  front_squat: { d: 2.6, a: P({ h: [44, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[52, 24], [54, 23]], ep: [1, .5] }), b: P({ h: [35, 70], t: 158, f: [[47, FLR], [49, FLR]], w: [[52, 42], [54, 41]], ep: [1, .5] }), pr: [{ k: 'bar', at: 'front', r: 8 }] },
+  goblet: { d: 2.6, a: P({ h: [44, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[52, 31], [53, 30]], ep: [.3, 1] }), b: P({ h: [35, 70], t: 158, f: [[47, FLR], [49, FLR]], w: [[52, 50], [53, 49]], ep: [.3, 1] }), pr: [{ k: 'db', at: 'w0', r: 4.4 }] },
+  bw_squat: { d: 2.4, a: P({ h: [44, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[47, 66], [49, 65]] }), b: P({ h: [34, 70], t: 145, f: [[47, FLR], [49, FLR]], w: [[70, 50], [72, 49]], ep: [0, 1] }) },
+  box_squat: { d: 2.8, a: P({ h: [44, 52.8], t: 180, f: [[49, FLR], [51, FLR]], w: [[41, 25], [43, 24]], ep: [0, 1] }), b: P({ h: [30, 68], t: 140, f: [[49, FLR], [51, FLR]], w: [[28, 42], [30, 41]], ep: [0, 1] }), pr: [{ k: 'bar', at: 'back', r: 8 }, { k: 'box', x: 18, y: 70, w: 16, h: 22 }] },
+  lunge: { d: 3, a: P({ h: [46, 52.8], t: 180, f: [[49, FLR], [47, FLR]], w: [[47, 66], [49, 65]] }), b: P({ h: [42, 66], t: 176, f: [[56, FLR], [24, FLR - 3]], w: [[42, 80], [44, 79]] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }] },
+  split_squat: { d: 3, a: P({ h: [48, 55], t: 178, f: [[56, FLR], [16, 64]], w: [[48, 69], [50, 68]], kp: [1, 0] }), b: P({ h: [44, 68], t: 170, f: [[56, FLR], [16, 64]], w: [[43, 82], [45, 81]] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }, { k: 'bench', x: 4, y: 64, w: 24 }] },
+  step_up: { d: 3, a: P({ h: [40, 58], t: 170, f: [[56, 69], [36, FLR]], w: [[42, 72], [44, 71]] }), b: P({ h: [54, 31], t: 180, f: [[56, 69], [57, 69]], w: [[55, 45], [57, 44]] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }, { k: 'box', x: 48, y: 70.6, w: 24, h: 21.4 }] },
+  hinge: { d: 2.8, a: P({ h: [30, 58], t: 112, f: [[46, FLR], [48, FLR]], w: [[54, 83], [56, 82]] }), b: P({ h: [44, 52.8], t: 180, f: [[46, FLR], [48, FLR]], w: [[46, 66], [48, 65]] }), pr: [{ k: 'bar', at: 'w0', r: 8 }] },
+  rdl: { d: 2.8, a: P({ h: [44, 52.8], t: 180, f: [[46, FLR], [48, FLR]], w: [[46, 66], [48, 65]] }), b: P({ h: [33, 56], t: 105, f: [[46, FLR], [48, FLR]], w: [[58, 74], [60, 73]] }), pr: [{ k: 'bar', at: 'w0', r: 8 }] },
+  db_rdl: { d: 2.8, a: P({ h: [44, 52.8], t: 180, f: [[46, FLR], [48, FLR]], w: [[46, 66], [48, 65]] }), b: P({ h: [33, 56], t: 105, f: [[46, FLR], [48, FLR]], w: [[58, 75], [60, 74]] }), pr: [{ k: 'db', at: 'w0', r: 3.6 }] },
+  good_morning: { d: 2.8, a: P({ h: [44, 52.8], t: 180, f: [[46, FLR], [48, FLR]], w: [[41, 25], [43, 24]], ep: [0, 1] }), b: P({ h: [34, 55], t: 100, f: [[46, FLR], [48, FLR]], w: [[58, 56], [60, 55]], ep: [-1, 1] }), pr: [{ k: 'bar', at: 'back', r: 8 }] },
+  hip_thrust: { d: 2.6, a: P({ h: [42, 80], t: -116, f: [[68, FLR], [70, FLR]], w: [[34, 78], [36, 77]], kp: [0, -1], ep: [0, 1] }), b: P({ h: [46, 63], t: -90, f: [[68, FLR], [70, FLR]], w: [[40, 62], [42, 61]], kp: [0, -1], ep: [0, 1] }), pr: [{ k: 'bar', at: 'hip', r: 8 }, { k: 'bench', x: 2, y: 67, w: 18 }] },
+  glute_bridge: { d: 2.4, a: P({ h: [54, 86], t: -90, f: [[76, FLR], [78, FLR]], w: [[40, 90], [42, 90]], kp: [0, -1] }), b: P({ h: [54, 76], t: -68, f: [[76, FLR], [78, FLR]], w: [[40, 90], [42, 90]], kp: [0, -1] }) },
+  leg_press: { d: 2.6, a: P({ h: [34, 72], t: -135, f: [[50, 49], [52, 48]], w: [[32, 74], [33, 74]], kp: [-.3, -1] }), b: P({ h: [34, 72], t: -135, f: [[58, 42], [60, 41]], w: [[32, 74], [33, 74]], kp: [-.3, -1] }), pr: [{ k: 'sled', at: 'f0' }, { k: 'seatback', x1: 6, y1: 46, x2: 36, y2: 76 }] },
+  leg_ext: { d: 2.4, a: P({ h: [36, 64], t: 172, f: [[54, 84], [56, 84]], w: [[40, 70], [42, 70]], kp: [1, -.4] }), b: P({ h: [36, 64], t: 172, f: [[74, 62], [76, 61]], w: [[40, 70], [42, 70]], kp: [1, -.4] }), pr: [{ k: 'seat', x: 22, y: 66, w: 22 }, { k: 'pad', at: 'f0' }] },
+  leg_curl: { d: 2.4, a: P({ h: [52, 62], t: -90, f: [[90, 63], [91, 62]], w: [[18, 66], [19, 66]], kp: [0, 1] }), b: P({ h: [52, 62], t: -90, f: [[76, 44], [77, 43]], w: [[18, 66], [19, 66]], kp: [0, 1] }), pr: [{ k: 'bench', x: 8, y: 66, w: 64 }, { k: 'pad', at: 'f0' }] },
+  calf: { d: 1.8, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[46, 66], [48, 65]] }), b: P({ h: [46, 48], t: 180, f: [[47, FLR - 4.6], [49, FLR - 4.6]], w: [[46, 61], [48, 60]] }), pr: [{ k: 'db', at: 'w0', r: 3.6 }], toe: true },
+  bench: { d: 2.4, a: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[31, 33], [32, 32]], ep: [0, 1] }), b: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[31, 52], [32, 51]], ep: [0, 1] }), pr: [{ k: 'bar', at: 'w0', r: 8 }, { k: 'bench', x: 14, y: 63, w: 50 }] },
+  incline: { d: 2.4, a: P({ h: [56, 64], t: -124, f: [[72, FLR], [70, FLR]], w: [[36, 22], [37, 21]], ep: [0, 1] }), b: P({ h: [56, 64], t: -124, f: [[72, FLR], [70, FLR]], w: [[34, 42], [35, 41]], ep: [0, 1] }), pr: [{ k: 'bar', at: 'w0', r: 8 }, { k: 'incline', x1: 18, y1: 36, x2: 58, y2: 68 }] },
+  db_bench: { d: 2.4, a: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[33, 33], [34, 32]], ep: [0, 1] }), b: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[33, 52], [34, 51]], ep: [0, 1] }), pr: [{ k: 'db', at: 'w0', r: 4 }, { k: 'bench', x: 14, y: 63, w: 50 }] },
+  fly: { d: 2.6, a: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[33, 33], [34, 32]], ep: [0, 1] }), b: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[33, 58], [34, 57]], ep: [-.2, 1] }), pr: [{ k: 'db', at: 'w0', r: 4 }, { k: 'bench', x: 14, y: 63, w: 50 }] },
+  pushup: { d: 2.2, a: P({ h: [50.4, 74.7], t: -114, f: [[86, FLR - .6], [88, FLR - 1]], w: [[24, AN.floor], [26, AN.floor - .5]], ep: [1, -.4] }), b: P({ h: [47.3, 85.6], t: -97, f: [[86, FLR - .6], [88, FLR - 1]], w: [[24, AN.floor], [26, AN.floor - .5]], ep: [1, -.4] }), toe: 'push' },
+  dip: { d: 2.4, a: P({ h: [46, 54], t: 178, f: [[38, 84], [40, 84]], w: [[47, 54], [49, 53]], ep: [-1, 0], kp: [1, 0] }), b: P({ h: [42, 72], t: 165, f: [[34, 95], [36, 95]], w: [[48, 54], [50, 53]], ep: [-1, 0], kp: [1, 0] }), pr: [{ k: 'bars', y: 54 }], nofloor: true },
+  ohp: { d: 2.4, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[52, 23], [54, 22]], ep: [1, .3] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[47, -4], [49, -5]], ep: [1, 0] }), pr: [{ k: 'bar', at: 'w0', r: 8 }] },
+  db_ohp: { d: 2.4, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[52, 20], [54, 19]], ep: [1, .3] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[48, -3], [50, -4]], ep: [1, 0] }), pr: [{ k: 'db', at: 'w0', r: 3.8 }] },
+  lat_raise: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[47, 51], [49, 50]], ep: [1, 0] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[46, 25], [48, 24]], ep: [0, 1] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }], front: true },
+  front_raise: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[49, 52], [51, 51]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[75, 22], [77, 21]], ep: [0, 1] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }] },
+  rear_fly: { d: 2.4, a: P({ h: [38, 56], t: 112, f: [[46, FLR], [48, FLR]], w: [[62, 66], [64, 65]], ep: [1, 0] }), b: P({ h: [38, 56], t: 112, f: [[46, FLR], [48, FLR]], w: [[56, 34], [58, 33]], ep: [-1, 0] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }] },
+  row: { d: 2.4, a: P({ h: [34, 56], t: 112, f: [[46, FLR], [48, FLR]], w: [[60, 76], [62, 75]] }), b: P({ h: [34, 56], t: 112, f: [[46, FLR], [48, FLR]], w: [[48, 62], [50, 61]], ep: [-1, -1] }), pr: [{ k: 'bar', at: 'w0', r: 8 }] },
+  db_row: { d: 2.4, a: P({ h: [24, 50], t: 100, f: [[22, FLR], [30, FLR]], w: [[52, 78], [58, 64]], ep: [-1, 0] }), b: P({ h: [24, 50], t: 100, f: [[22, FLR], [30, FLR]], w: [[40, 62], [58, 64]], ep: [-1, -.3] }), pr: [{ k: 'db', at: 'w0', r: 3.8 }, { k: 'bench', x: 44, y: 64, w: 44 }] },
+  cable_row: { d: 2.4, a: P({ h: [30, 76], t: 166, f: [[66, 82], [68, 82]], w: [[66, 62], [68, 61]], kp: [0, -1] }), b: P({ h: [30, 76], t: 186, f: [[66, 82], [68, 82]], w: [[42, 62], [44, 61]], kp: [0, -1], ep: [-1, 0] }), pr: [{ k: 'cable', from: [92, 70] }, { k: 'seat', x: 18, y: 78, w: 26 }, { k: 'block', x: 70, y: 76, w: 6, h: 16 }] },
+  pulldown: { d: 2.4, a: P({ h: [42, 70], t: 176, f: [[60, FLR], [62, FLR]], w: [[46, 8], [48, 7]], kp: [1, -.6], ep: [-1, 0] }), b: P({ h: [42, 70], t: 190, f: [[60, FLR], [62, FLR]], w: [[48, 30], [50, 29]], kp: [1, -.6], ep: [-1, 0] }), pr: [{ k: 'cable', from: [48, 2] }, { k: 'seat', x: 30, y: 72, w: 22 }] },
+  pullup: { d: 2.8, a: P({ h: [44, 60], t: 180, f: [[36, 92], [38, 92]], w: [[48, 2], [50, 1]], ep: [-1, 0], kp: [1, 0] }), b: P({ h: [44, 42], t: 176, f: [[36, 76], [38, 76]], w: [[48, 2], [50, 1]], ep: [-1, 0], kp: [1, 0] }), pr: [{ k: 'hibar', y: 2 }], nofloor: true },
+  inv_row: { d: 2.4, a: P({ h: [50, 70], t: -110, f: [[84, FLR], [86, FLR]], w: [[26, 44], [28, 43]], ep: [0, 1] }), b: P({ h: [48, 60], t: -100, f: [[84, FLR], [86, FLR]], w: [[26, 44], [28, 43]], ep: [0, 1] }), pr: [{ k: 'hibar', y: 44, x1: 14, x2: 40 }] },
+  shrug: { d: 2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[46, 66], [48, 65]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[46, 62], [48, 61]] }), pr: [{ k: 'bar', at: 'w0', r: 8 }], shrug: true },
+  upright_row: { d: 2.4, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[50, 64], [52, 63]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[52, 30], [54, 29]], ep: [-1, -.6] }), pr: [{ k: 'bar', at: 'w0', r: 8 }] },
+  curl: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[49, 65], [51, 64]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[56, 32], [58, 31]], ep: [-.3, 1] }), pr: [{ k: 'bar', at: 'w0', r: 7.5 }] },
+  db_curl: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[49, 65], [51, 64]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[56, 32], [58, 31]], ep: [-.3, 1] }), pr: [{ k: 'db', at: 'w0', r: 3.4 }] },
+  cable_curl: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[50, 65], [52, 64]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[56, 32], [58, 31]], ep: [-.3, 1] }), pr: [{ k: 'cable', from: [74, 90] }] },
+  preacher: { d: 2.2, a: P({ h: [34, 66], t: 168, f: [[50, FLR], [52, FLR]], w: [[66, 54], [67, 53]], ep: [0, 1], kp: [1, -.4] }), b: P({ h: [34, 66], t: 168, f: [[50, FLR], [52, FLR]], w: [[46, 30], [47, 29]], ep: [0, 1], kp: [1, -.4] }), pr: [{ k: 'bar', at: 'w0', r: 7.5 }, { k: 'incline', x1: 40, y1: 38, x2: 62, y2: 54 }, { k: 'seat', x: 22, y: 68, w: 20 }] },
+  pushdown: { d: 2.2, a: P({ h: [46, 52.8], t: 176, f: [[47, FLR], [49, FLR]], w: [[58, 36], [60, 35]], ep: [-.2, 1] }), b: P({ h: [46, 52.8], t: 176, f: [[47, FLR], [49, FLR]], w: [[54, 62], [56, 61]], ep: [-.2, 1] }), pr: [{ k: 'cable', from: [62, 0] }] },
+  oh_ext: { d: 2.4, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[36, 12], [38, 11]], ep: [.4, -1] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[50, -6], [52, -7]], ep: [.4, -1] }), pr: [{ k: 'db', at: 'w0', r: 4 }] },
+  skull: { d: 2.4, a: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[33, 33], [34, 32]], ep: [0, 1] }), b: P({ h: [56, 60], t: -90, f: [[72, FLR], [70, FLR]], w: [[19, 46], [20, 45]], ep: [1, -1] }), pr: [{ k: 'bar', at: 'w0', r: 7.5 }, { k: 'bench', x: 14, y: 63, w: 50 }] },
+  bench_dip: { d: 2.4, a: P({ h: [34, 66], t: 178, f: [[64, FLR], [66, FLR]], w: [[30, 64], [32, 63]], ep: [-1, 0], kp: [1, -1] }), b: P({ h: [34, 80], t: 178, f: [[64, FLR], [66, FLR]], w: [[30, 64], [32, 63]], ep: [-1, 0], kp: [1, -1] }), pr: [{ k: 'bench', x: 8, y: 64, w: 26 }] },
+  crunch: { d: 2.2, a: P({ h: [54, 86], t: -90, f: [[74, FLR], [76, FLR]], w: [[38, 82], [40, 82]], kp: [0, -1], ep: [0, -1] }), b: P({ h: [54, 86], t: -122, f: [[74, FLR], [76, FLR]], w: [[42, 72], [44, 72]], kp: [0, -1], ep: [0, -1] }) },
+  situp: { d: 2.6, a: P({ h: [54, 86], t: -90, f: [[74, FLR], [76, FLR]], w: [[38, 82], [40, 82]], kp: [0, -1], ep: [0, -1] }), b: P({ h: [54, 86], t: -170, f: [[74, FLR], [76, FLR]], w: [[56, 66], [58, 66]], kp: [0, -1], ep: [1, 0] }) },
+  cable_crunch: { d: 2.4, a: P({ h: [40, 70], t: 165, f: [[21, FLR], [23, FLR]], w: [[52, 37], [53, 36]], kp: [1, 1], ep: [1, 1] }), b: P({ h: [36, 70], t: 112, f: [[21, FLR], [23, FLR]], w: [[68, 56], [69, 55]], kp: [1, 1], ep: [1, 1] }), pr: [{ k: 'cable', from: [70, -10] }], kneel: true },
+  plank: { d: 3.2, a: P({ h: [48, 81.6], t: -103, f: [[86, FLR - .6], [88, FLR - 1]], w: [[6, 90], [8, 89.5]], ep: [0, 1] }), b: P({ h: [48, 80.4], t: -103, f: [[86, FLR - .6], [88, FLR - 1]], w: [[6, 90], [8, 89.5]], ep: [0, 1] }), toe: 'push', breathe: true },
+  side_plank: { d: 3.2, a: P({ h: [48, 81.6], t: -103, f: [[86, FLR], [87, FLR - 2.4]], w: [[6, 90], [22, 47]], ep: [0, 1] }), b: P({ h: [48, 79.6], t: -103, f: [[86, FLR], [87, FLR - 2.4]], w: [[6, 90], [22, 45]], ep: [0, 1] }), breathe: true },
+  rollout: { d: 3, a: P({ h: [40, 70], t: 125, f: [[22, FLR], [24, FLR]], w: [[62, 84], [64, 83]], kp: [1, 1] }), b: P({ h: [46, 79], t: 96, f: [[22, FLR], [24, FLR]], w: [[94, 85], [96, 84]], kp: [1, 1] }), pr: [{ k: 'wheel', at: 'w0' }], kneel: true },
+  leg_raise: { d: 2.8, a: P({ h: [44, 60], t: 180, f: [[44, 96], [46, 96]], w: [[46, 2], [48, 1]], ep: [-1, 0] }), b: P({ h: [42, 60], t: 184, f: [[80, 58], [82, 57]], w: [[46, 2], [48, 1]], ep: [-1, 0] }), pr: [{ k: 'hibar', y: 2 }], nofloor: true },
+  twist: { d: 1.6, a: P({ h: [44, 84], t: -140, f: [[66, 80], [68, 80]], w: [[44, 64], [46, 64]], kp: [0, -1], ep: [1, 1] }), b: P({ h: [44, 84], t: -140, f: [[66, 80], [68, 80]], w: [[36, 70], [38, 70]], kp: [0, -1], ep: [1, 1] }), pr: [{ k: 'db', at: 'w0', r: 3.6 }], nohold: true },
+  chop: { d: 2.6, a: P({ h: [46, 52.8], t: 180, f: [[44, FLR], [52, FLR]], w: [[66, 14], [67, 14]], ep: [0, 1] }), b: P({ h: [44, 54], t: 166, f: [[44, FLR], [52, FLR]], w: [[32, 70], [33, 70]], ep: [0, 1] }), pr: [{ k: 'cable', from: [86, 4] }] },
+  pallof: { d: 2.6, a: P({ h: [46, 52.8], t: 180, f: [[44, FLR], [52, FLR]], w: [[56, 32], [57, 32]], ep: [-1, 0] }), b: P({ h: [46, 52.8], t: 180, f: [[44, FLR], [52, FLR]], w: [[74, 32], [75, 32]], ep: [0, 1] }), pr: [{ k: 'cable', from: [94, 32] }] },
+  kickback: { d: 2.2, a: P({ h: [46, 52.8], t: 170, f: [[48, FLR], [50, FLR]], w: [[66, 40], [67, 40]], ep: [0, 1] }), b: P({ h: [46, 52.8], t: 158, f: [[48, FLR], [22, 76]], w: [[66, 40], [67, 40]], ep: [0, 1] }), pr: [{ k: 'cable', from: [4, 90], at: 'f1' }, { k: 'post', x: 70, y1: 20, y2: 92 }] },
+  pull_through: { d: 2.6, a: P({ h: [56, 58], t: 120, f: [[48, FLR], [50, FLR]], w: [[36, 84], [38, 83]] }), b: P({ h: [44, 52.8], t: 180, f: [[48, FLR], [50, FLR]], w: [[52, 66], [54, 65]] }), pr: [{ k: 'cable', from: [4, 90] }] },
+  carry: { d: 1.6, a: P({ h: [44, 52.8], t: 180, f: [[52, FLR], [38, FLR]], w: [[42, 67], [46, 66]] }), b: P({ h: [48, 52.8], t: 180, f: [[42, FLR], [58, FLR]], w: [[48, 67], [50, 66]] }), pr: [{ k: 'db', at: 'w0', r: 4 }], nohold: true },
+  nordic: { d: 3, a: P({ h: [46, 58], t: 180, f: [[20, 88], [22, 88]], w: [[50, 60], [52, 59]], kp: [0, 1], ep: [1, 1] }), b: P({ h: [46, 58], t: 118, f: [[20, 88], [22, 88]], w: [[72, 70], [74, 69]], kp: [0, 1], ep: [1, 1] }), kneel: 'nordic', pr: [{ k: 'pad', at: 'f0' }] },
+  superman: { d: 2.4, a: P({ h: [52, 86], t: -90, f: [[90, 88], [92, 88]], w: [[10, 88], [12, 88]] }), b: P({ h: [52, 86], t: -104, f: [[88, 80], [90, 80]], w: [[12, 74], [14, 74]] }) },
+  tib: { d: 1.8, a: P({ h: [40, 50], t: 184, f: [[47, FLR], [49, FLR]], w: [[38, 64], [40, 63]] }), b: P({ h: [40, 50], t: 184, f: [[47, FLR], [49, FLR]], w: [[38, 64], [40, 63]] }), toe: 'tib', pr: [{ k: 'post', x: 28, y1: 10, y2: 92 }] },
+  face_pull: { d: 2.4, a: P({ h: [44, 52.8], t: 180, f: [[44, FLR], [50, FLR]], w: [[74, 20], [75, 20]], ep: [0, 1] }), b: P({ h: [44, 52.8], t: 180, f: [[44, FLR], [50, FLR]], w: [[54, 14], [55, 14]], ep: [-1, -.4] }), pr: [{ k: 'cable', from: [96, 16] }] },
+  cable_raise: { d: 2.2, a: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[49, 64], [51, 63]] }), b: P({ h: [46, 52.8], t: 180, f: [[47, FLR], [49, FLR]], w: [[46, 25], [48, 24]], ep: [0, 1] }), pr: [{ k: 'cable', from: [60, 92] }], front: true }
+};
+/* which movement each exercise uses */
+const EX_MOVE = {
+  bb_bench: 'bench', incline_bb_bench: 'incline', db_press: 'db_bench', incline_db_press: 'incline', machine_chest_press: 'bench', cable_fly: 'fly', pushups: 'pushup', dips: 'dip',
+  ohp: 'ohp', db_shoulder_press: 'db_ohp', db_lat_raise: 'lat_raise', cable_lat_raise: 'cable_raise', landmine_press: 'ohp', face_pull: 'face_pull', rear_delt_fly: 'rear_fly',
+  bb_row: 'row', pendlay_row: 'row', pullups: 'pullup', db_row: 'db_row', lat_pulldown: 'pulldown', seated_cable_row: 'cable_row', deadlift: 'hinge', superman: 'superman',
+  bb_squat: 'squat', front_squat: 'front_squat', bulgarian_split: 'split_squat', goblet_squat: 'goblet', leg_press: 'leg_press', leg_extension: 'leg_ext', walking_lunge: 'lunge', bw_squat: 'bw_squat',
+  rdl: 'rdl', db_rdl: 'db_rdl', leg_curl: 'leg_curl', bb_hip_thrust: 'hip_thrust', glute_bridge: 'glute_bridge', standing_calf_raise: 'calf', db_calf_raise: 'calf', bw_calf_raise: 'calf',
+  bb_curl: 'curl', incline_curl: 'db_curl', hammer_curl: 'db_curl', cable_curl: 'cable_curl', cgbp: 'bench', skullcrusher: 'skull', tri_pushdown: 'pushdown', oh_tri_ext: 'oh_ext',
+  ab_rollout: 'rollout', hanging_leg_raise: 'leg_raise', cable_crunch: 'cable_crunch', crunch: 'crunch', decline_bb_bench: 'bench', decline_db_press: 'db_bench', db_chest_fly: 'fly',
+  low_high_cable_fly: 'front_raise', high_low_cable_fly: 'fly', floor_press: 'bench', landmine_chest_press: 'ohp', tbar_row: 'row', cs_db_row: 'db_row', straight_arm_pulldown: 'pushdown',
+  meadows_row: 'db_row', rack_pull: 'hinge', inverted_row: 'inv_row', bb_shrug: 'shrug', db_shrug: 'shrug', cable_upright_row: 'upright_row', db_front_raise: 'front_raise', arnold_press: 'db_ohp',
+  cable_y_raise: 'cable_raise', cable_egyptian_raise: 'cable_raise', bb_upright_row: 'upright_row', face_pull_press: 'face_pull', bench_dips: 'bench_dip', db_skullcrusher: 'skull', oh_cable_tri_ext: 'oh_ext',
+  jm_press: 'skull', tate_press: 'skull', single_arm_cable_curl: 'cable_curl', reverse_bb_curl: 'curl', preacher_curl: 'preacher', incline_hammer_curl: 'db_curl', bayesian_curl: 'cable_curl', spider_curl: 'db_curl',
+  farmers_walk: 'carry', box_squat: 'box_squat', zercher_squat: 'front_squat', hack_squat: 'squat', heel_goblet_squat: 'goblet', db_step_up: 'step_up', sissy_squat: 'bw_squat',
+  good_morning: 'good_morning', seated_leg_curl: 'leg_curl', nordic_curl: 'nordic', sl_db_rdl: 'db_rdl', ghr: 'nordic', cable_kickback: 'kickback', cable_pull_through: 'pull_through',
+  deficit_reverse_lunge: 'lunge', db_sumo_squat: 'goblet', sl_hip_thrust: 'hip_thrust', curtsy_lunge: 'lunge', seated_calf_raise: 'calf', donkey_calf_raise: 'calf', tib_raise: 'tib',
+  bicycle_crunch: 'crunch', plank: 'plank', situp: 'situp', side_plank: 'side_plank', pallof_press: 'pallof', captains_chair_raise: 'leg_raise', cable_woodchop: 'chop', russian_twist: 'twist',
+  dragon_flag: 'leg_raise', decline_situp: 'situp'
+};
+const moveOf = ex => ex && MOVES[EX_MOVE[ex.id] || ''] ? EX_MOVE[ex.id] : null;
+/* ---------- drawing ---------- */
+const pt = p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+const pl = ps => 'M' + ps.map(pt).join('L');
+function frontFig(k, m) {                            // facing the viewer (lateral raises)
+  const a = lerp(m.fa[0], m.fa[1], k), cx = 50, hipY = 52.8, shY = 24, sw = 9;
+  let s = `<path class="fl" d="M10 ${AN.floor}H90"/>`;
+  s += `<path class="lg" d="${pl([[cx - 4, hipY], [cx - 5, 72], [cx - 5, FLR]])}"/><path class="lg" d="${pl([[cx + 4, hipY], [cx + 5, 72], [cx + 5, FLR]])}"/>`;
+  s += `<path class="tr" d="${pl([[cx, hipY], [cx, shY]])}"/><path class="tr" d="${pl([[cx - sw, shY], [cx + sw, shY]])}"/><circle class="hd" cx="${cx}" cy="${shY - 10.6}" r="${AN.head}"/>`;
+  [-1, 1].forEach(sg => {
+    const S = [cx + sg * sw, shY], E = add(S, [Math.sin(a * Math.PI / 180) * AN.ua * sg, Math.cos(a * Math.PI / 180) * AN.ua]), W = add(E, [Math.sin((a + 14) * Math.PI / 180) * AN.fa * sg, Math.cos((a + 14) * Math.PI / 180) * AN.fa]);
+    s += `<path class="ar" d="${pl([S, E, W])}"/>`;
+    if (m.cable) s += `<path class="cb" d="${pl([[cx - sg * 6, AN.floor - 1], W])}"/>`; else s += `<circle class="db" cx="${W[0].toFixed(1)}" cy="${W[1].toFixed(1)}" r="3.2"/>`;
+  });
+  return s;
+}
+function figMarkup(name, k) {
+  const m = MOVES[name]; if (!m) return '';
+  if (m.front) return frontFig(k, { fa: name === 'cable_raise' ? [10, 80] : [8, 84], cable: name === 'cable_raise' });
+  const P0 = mix(m.a, m.b, k), J = solve(P0), lift = m.shrug ? lerp(0, 3.4, k) : 0;
+  if (lift) { J.S = [J.S[0], J.S[1] - lift]; J.head = [J.head[0], J.head[1] - lift * .4]; J.arms.forEach(a => { a[0] = J.S; a[1] = [a[1][0], a[1][1] - lift]; a[2] = [a[2][0], a[2][1] - lift]; }); }
+  const at = w => w === 'w0' ? J.arms[0][2] : w === 'f0' ? J.legs[0][2] : w === 'f1' ? J.legs[1][2] : w === 'hip' ? add(P0.h, v2(P0.t + 90, 6)) : w === 'back' ? add(add(J.S, v2(J.t, -2.5)), v2(J.t + 90, 4.5)) : w === 'front' ? add(add(J.S, v2(J.t, -2)), v2(J.t - 90, 5.5)) : J.arms[0][2];
+  const foot = (leg, far) => {
+    const A = leg[2];
+    if (m.toe === true) return [A, [A[0] + 6.6, AN.floor - .6]];
+    if (m.toe === 'push') return [A, [A[0] + 1.5, AN.floor]];
+    if (m.toe === 'tib') { const up = lerp(0, 1, k); return [A, [A[0] + 6.6, AN.floor - .6 - up * 4.2]]; }
+    if (m.kneel === 'nordic') return [A, [A[0] - 6, A[1] + 1]];
+    if (m.kneel) return [A, [A[0] - 5.5, AN.floor - .4]];
+    if (m.nofloor || m.legs === 'hang') return [A, [A[0] + 2, A[1] + 6]];
+    const lying = Math.abs(J.t) < 140 && J.t < 0 && A[1] < AN.floor - 4;  // feet in the air (leg curl / press)
+    return lying ? [A, add(A, v2(J.t > -100 ? 160 : 120, 6))] : [A, [A[0] + 6.6, A[1] + .2]];
+  };
+  let back = '', front = '';
+  (m.pr || []).forEach(p => {
+    if (p.k === 'bench') back += `<rect class="eq" x="${p.x}" y="${p.y}" width="${p.w}" height="3.2" rx="1.4"/><path class="eqd" d="M${p.x + 4} ${p.y + 3}V${AN.floor}M${p.x + p.w - 4} ${p.y + 3}V${AN.floor}"/>`;
+    else if (p.k === 'incline') back += `<path class="eqw" d="M${p.x1} ${p.y1}L${p.x2} ${p.y2}"/><path class="eqd" d="M${p.x2 - 4} ${p.y2}V${AN.floor}M${(p.x1 + p.x2) / 2} ${(p.y1 + p.y2) / 2 + 2}V${AN.floor}"/>`;
+    else if (p.k === 'box') back += `<rect class="eq" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="1.6"/>`;
+    else if (p.k === 'block') back += `<rect class="eqd2" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="1"/>`;
+    else if (p.k === 'seat') back += `<rect class="eq" x="${p.x}" y="${p.y}" width="${p.w}" height="3.4" rx="1.4"/><path class="eqd" d="M${p.x + p.w / 2} ${p.y + 3}V${AN.floor}"/>`;
+    else if (p.k === 'seatback') back += `<path class="eqw" d="M${p.x1} ${p.y1}L${p.x2} ${p.y2}"/><path class="eqd" d="M${p.x2} ${p.y2}V${AN.floor}"/>`;
+    else if (p.k === 'hibar') back += `<path class="eqw" d="M${p.x1 ?? 26} ${p.y}H${p.x2 ?? 74}"/>${p.x1 == null ? `<path class="eqd" d="M28 ${p.y}V${AN.floor}M72 ${p.y}V${AN.floor}"/>` : `<path class="eqd" d="M${p.x1 + 2} ${p.y}V${AN.floor}"/>`}`;
+    else if (p.k === 'bars') back += `<path class="eqw" d="M30 ${p.y}H70"/><path class="eqd" d="M34 ${p.y}V${AN.floor}M66 ${p.y}V${AN.floor}"/>`;
+    else if (p.k === 'post') back += `<path class="eqd" d="M${p.x} ${p.y1}V${p.y2}"/>`;
+    else if (p.k === 'cable') { const H = at(p.at || 'w0'); back += `<circle class="pul" cx="${p.from[0]}" cy="${p.from[1]}" r="2.2"/>`; front += `<path class="cb" d="${pl([p.from, H])}"/>`; }
+    else if (p.k === 'bar') { const c = at(p.at); front += `<circle class="pl" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${p.r}"/><circle class="plh" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="1.6"/>`; }
+    else if (p.k === 'db') { const c = at(p.at); front += `<circle class="db" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${p.r}"/>`; }
+    else if (p.k === 'wheel') { const c = at('w0'); front += `<circle class="pl" cx="${c[0].toFixed(1)}" cy="${(AN.floor - 6).toFixed(1)}" r="6"/>`; }
+    else if (p.k === 'sled') { const A = J.legs[0][2], dx = A[0] - P0.h[0], dy = A[1] - P0.h[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * 9, ny = dx / L * 9, o = [A[0] + dx / L * 3, A[1] + dy / L * 3]; front += `<path class="eqw" d="M${(o[0] - nx).toFixed(1)} ${(o[1] - ny).toFixed(1)}L${(o[0] + nx).toFixed(1)} ${(o[1] + ny).toFixed(1)}"/>`; }
+    else if (p.k === 'pad') { const A = at(p.at); front += `<circle class="pad" cx="${A[0].toFixed(1)}" cy="${A[1].toFixed(1)}" r="3"/>`; }
+  });
+  const limb = (pts, cls) => `<path class="${cls}" d="${pl(pts)}"/>`;
+  let s = m.nofloor ? '' : `<path class="fl" d="M4 ${AN.floor}H96"/>`;
+  s += back;
+  s += limb([...J.legs[1], foot(J.legs[1])[1]], 'lg far') + limb(J.arms[1], 'ar far');
+  s += limb([P0.h, J.S], 'tr') + `<circle class="hd" cx="${J.head[0].toFixed(1)}" cy="${J.head[1].toFixed(1)}" r="${AN.head}"/>`;
+  s += limb([...J.legs[0], foot(J.legs[0])[1]], 'lg') + limb(J.arms[0], 'ar');
+  return s + front;
+}
+/* timing: hold at the start, move, hold at the end, come back */
+function animK(m, t) {
+  const c = (t / (m.d * 1000)) % 1, e = x => (1 - Math.cos(Math.PI * x)) / 2;
+  if (m.nohold || m.breathe) return m.breathe ? .5 - .5 * Math.cos(c * 2 * Math.PI) : e(c < .5 ? c * 2 : 2 - c * 2);
+  return c < .12 ? 0 : c < .5 ? e((c - .12) / .38) : c < .62 ? 1 : e(1 - (c - .62) / .38);
+}
+function figSvg(ex, cls) {
+  const mv = moveOf(ex); if (!mv) return '';
+  return `<svg class="anim ${cls || ''}" viewBox="0 -14 100 110" data-mv="${mv}" aria-hidden="true">${figMarkup(mv, 0)}</svg>`;
+}
+/* small tiles zoom in on the figure: union of its outline across the whole movement, floor kept in view */
+const FIT = {};
+function fitBox(el, mv) {
+  const r = el.getBoundingClientRect(), asp = r.width / r.height, key = mv + '|' + asp.toFixed(2);
+  if (!FIT[key]) {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    [0, .25, .5, .75, 1].forEach(k => {
+      el.innerHTML = figMarkup(mv, k);
+      el.querySelectorAll(':scope > :not(.fl)').forEach(c => { try { const b = c.getBBox(); if (!b.width && !b.height) return; x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.width); y1 = Math.max(y1, b.y + b.height); } catch (e) { } });
+    });
+    if (x0 > x1) { FIT[key] = '0 -14 100 110'; } else {
+      const fl = MOVES[mv].nofloor ? y1 : Math.max(y1, AN.floor);
+      let w = x1 - x0 + 10, h = fl - y0 + 10; const cx = (x0 + x1) / 2;
+      if (w / h < asp) w = h * asp; else h = w / asp;
+      if (h < 46) { h = 46; w = h * asp; }
+      FIT[key] = [cx - w / 2, fl + 5 - h, w, h].map(v => +v.toFixed(1)).join(' ');
+    }
+  }
+  el.setAttribute('viewBox', FIT[key]); el.dataset.fit = '1';
+}
+(function () {                                       // one loop animates every figure that's on screen
+  let last = 0;
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (document.hidden || t - last < 33) return; last = t;
+    const els = document.querySelectorAll('svg.anim[data-mv]'); if (!els.length) return;
+    const H = innerHeight;
+    els.forEach(el => {
+      const r = el.getBoundingClientRect(); if (!r.width || r.bottom < 0 || r.top > H) return;
+      const mv = el.dataset.mv, m = MOVES[mv];
+      if (!el.dataset.fit && el.closest('.thumb:not(.lg),.vfig')) fitBox(el, mv);
+      if (still.matches) { if (el.dataset.st !== '1') { el.innerHTML = figMarkup(mv, 1); el.dataset.st = '1'; } return; }
+      el.innerHTML = figMarkup(mv, animK(m, t + (+el.dataset.off || 0)));
+    });
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ---------- how-to videos: a tutorial per exercise, played inside the app ----------
+   VIDEOS maps exercise id -> [YouTube id, title]. Someone can swap in their own pick
+   (Change video), stored per person in state.vidOver. Nothing loads from YouTube until a
+   video is opened, and the embed uses youtube-nocookie. */
+const VIDEOS = {"bb_bench":["rT7DgCr-3pg","How To: Barbell Bench Press"],"incline_bb_bench":["SrqOu55lrYU","How To: Incline Barbell Bench Press"],"db_press":["MdwJPkuesIo","How To: Dumbbell Chest Press"],"incline_db_press":["OC7Qs_SAO2E","How To Do Incline Dumbbell Press Correctly"],"machine_chest_press":["B-zyH8OTlsg","Machine Chest Press: How To"],"cable_fly":["54BRit2Vz4g","How to Do Standing Cable Chest Flys"],"pushups":["ijhwNytFnFM","Push Up - How To"],"dips":["yN6Q1UI_xkE","How To Do Dips For A Bigger Chest and Shoulders"],"ohp":["ZXpdJOLNoWw","Barbell Overhead Press - How To"],"bb_squat":["_vNjV8teHW0","Barbell Back Squat: How To (3 steps to proper form)"],"db_shoulder_press":["0FuzhFsGgSI","How To Dumbbell Shoulder Press (Perfect Your Form in 3 Minutes)"],"db_lat_raise":["ssAo_xwFt5c","How to Do Dumbbell Lateral Raises"],"cable_lat_raise":["-CAGLnWUkWA","How to Do Cable Lateral Raises (Start to Finish Guide)"],"landmine_press":["v7mjvEDG8ro","How To Single Arm Landmine Press"],"face_pull":["4CXhdbWOdzQ","How To: Cable Face Pull"],"rear_delt_fly":["UO_v23hHAdM","Bent Over Dumbbell Rear Delt Flyes (Exercise Tutorial + Form Tips)"],"bb_row":["ktKsQYqJthw","Barbell Bent-Over Row Form Tutorial"],"pendlay_row":["YlkPGRNgSm8","How to Do Pendlay Rows (Barbell)"],"pullups":["Y44dJcTEhJE","How to Do a Perfect Pull-Up"],"db_row":["S_kOe9mOLlg","How to Do a Single Arm Dumbbell Row"],"lat_pulldown":["rpkWBC1gCcE","Beginner's Guide: Lat Pull-Down (Step-by-Step Exercise Tutorial)"],"seated_cable_row":["OeLb503NZHk","Seated Cable Row Tutorial: Build a Strong Back with Proper Form"],"deadlift":["xkb5_v6t8xI","How to Deadlift for Beginners (Step-by-Step Guide)"],"superman":["n1gh_F1PlTE","How To Do: Bodyweight Hyperextension"],"front_squat":["npVgCT7NznU","Front Squat 101: Beginner's Guide"],"bulgarian_split":["YFLHDXeekVc","Bulgarian Split Squat: How To (3 steps to proper form)"],"goblet_squat":["vu0ZfLsHi0E","Goblet Squat: How To (3 steps to proper form)"],"leg_press":["uRFWe2nOUjg","Leg Press Machine Tutorial"],"leg_extension":["xAUvXdHu1sI","How to do the LEG EXTENSION properly (in just 80 seconds)"],"walking_lunge":["I34ysEkPK7w","Dumbbell Walking Lunge - How To"],"bw_squat":["ZLJBfYF_oO0","Bodyweight Squat: How To (3 steps to proper form)"],"rdl":["Roe2hOnzXf4","Barbell Romanian Deadlift (Exercise Tutorial + Form Tips)"],"db_rdl":["hQgFixeXdZo","Dumbbell Romanian (RDL) Deadlift - Technique for Beginners"],"leg_curl":["SbSNUXPRkc8","How To Do A Lying Leg Curl (Prone Leg Curl)"],"bb_hip_thrust":["jfZ2TwOSK9c","How To Do A Barbell Hip Thrust (The Right Way)"],"glute_bridge":["KI6fjDqGZh4","Glute Bridge: How To (3 steps to proper form)"],"standing_calf_raise":["4HQ8Am9IuME","Standing Calf Raise (Proper Form)"],"db_calf_raise":["TOoPAb1o8F0","How to: Dumbbell Calf Raise"],"bw_calf_raise":["uhLjADhUxFM","How to Do Single Leg Calf Raises"],"bb_curl":["9BpYNH4nb_Q","How to Do Barbell Curls"],"incline_curl":["e3zNNfjJszA","Incline Dumbbell Curl Form (How-To in 90 Seconds)"],"hammer_curl":["zC3nLlEvin4","How To: Dumbbell Hammer Curl"],"cable_curl":["pEVXvlVKm80","Cable Bicep Curl: How To"],"cgbp":["a2G3IdaTcPU","How To Do The Close Grip Bench Press"],"skullcrusher":["GaK2da6B2zM","EZ Bar Skull Crushers: How To"],"tri_pushdown":["ChbWX35gD44","Cable Triceps Pushdown Tutorial"],"oh_tri_ext":["-Vyt2QdsR7E","How To: Standing Overhead Dumbbell Tricep Extension"],"ab_rollout":["5v2j3zTe6T0","How To: Barbell Rollout"],"hanging_leg_raise":["ByPKcOzBH1g","How to Do Hanging Leg Raises (Step-by-Step Tutorial)"],"cable_crunch":["NJQROeaBiVE","How To: Kneeling Cable Crunch (Core)"],"crunch":["9T4WQGlKCRk","How to Do Crunches Properly for Stronger Abs"],"decline_bb_bench":["16yItsCGnsw","How to Do Decline Bench Press"],"decline_db_press":["k9CzXmJcJNw","Decline Dumbbell Chest Press: How To"],"db_chest_fly":["eozdVDA78K0","How To: Dumbbell Flys On A Flat Bench"],"low_high_cable_fly":["Jiz0Vzdwx_Y","Low to High Cable Fly: How To"],"high_low_cable_fly":["hhruLxo9yZU","How To Do A High to Low Cable Fly / Cable Crossover"],"floor_press":["l0Qy3EmoqZY","How to Do the Barbell Floor Press"],"landmine_chest_press":["N4UpzIcBe34","How To Do Landmine Chest Press"],"tbar_row":["EyA_ym9Ksaw","Landmine T-Bar Row (How To & Coaching Points)"],"cs_db_row":["f0bFCVXB8hc","Exercise Tutorial: Chest Supported DB Row"],"straight_arm_pulldown":["lJsiuRq7Bts","How to do the Cable Straight Arm Pulldown"],"meadows_row":["G-jU1aPVhnY","How to Meadows Row \"The Right Way\""],"rack_pull":["Y99s0dNWpUw","How To Do Rack Pulls"],"inverted_row":["sHeLHRd_nCs","How to do an Inverted Row with Proper Form"],"bb_shrug":["q4x4syK-eXM","Barbell Shrugs (How To, Grips, Coaching Tips)"],"db_shrug":["RLHxN6hq8NA","How to Do Dumbbell Shrugs"],"cable_upright_row":["rPsb1mbyr1o","How to Do Cable Upright Rows"],"db_front_raise":["zkP0MsTcIVU","How To Do A Dumbbell Front Raise"],"arnold_press":["TUHL8dXFvTg","How to do an Arnold Press"],"cable_y_raise":["NBkMIWWkIKQ","How To Cable Y-Raise (Grow Your Medial Delts)"],"cable_egyptian_raise":["CVXfAx42wfw","Cable Behind The Body Lateral Raise"],"bb_upright_row":["EMW4DavLSo8","Barbell Upright Row: How To"],"face_pull_press":["kAtUPJ0SeiE","Cable Facepull to Overhead Press"],"bench_dips":["WVeZDBhZwLA","How to do a Bench Dip"],"db_skullcrusher":["8ncEJDm7Cig","Dumbbell Skull Crusher Tutorial"],"oh_cable_tri_ext":["AUsSlsBu5eg","Overhead Rope Tricep Extensions (How To)"],"jm_press":["M3aI4xIiNI0","How To: Barbell JM Press"],"tate_press":["cZJ-4Ll3uAo","How To Tate Press"],"single_arm_cable_curl":["vSWooWapx5w","Single Arm Cable Curl (Exercise Library)"],"reverse_bb_curl":["YO98hq3vX7g","Reverse Grip Barbell Curl (How To)"],"preacher_curl":["e7X6G07KnPI","EZ-Bar Preacher Curl"],"incline_hammer_curl":["1Z6XiaBxwHQ","Incline Dumbbell Hammer Curl - OPEX Exercise Library"],"bayesian_curl":["aeS38n_Ht6A","How To Bayesian Cable Curl"],"spider_curl":["z1uuyKW5PRk","Dumbbell Spider Curl Form (How-To in 90 Seconds)"],"farmers_walk":["8OtwXwrJizk","How To Do A Farmer's Walk (Farmer's Carry)"],"box_squat":["fVOrkHf_54k","How to Box Squat Properly (Using a Bench and Barbell)"],"zercher_squat":["zWo0TXIKkQ4","How to Do Zercher Squats: Form, Benefits and Why You Should Try Them"],"hack_squat":["hglQExHCM9Q","Hack Squat Machine (Exercise Tutorial + Form Tips)"],"heel_goblet_squat":["RUXLuZ_GLrE","Heel Elevated Goblet Squat For Blasting Quads"],"db_step_up":["9ZknEYboBOQ","Dumbbell Step-up - How To"],"sissy_squat":["H9f3dt6fJ8A","How to Do the Sissy Squat (Complete Beginner Tutorial)"],"good_morning":["Nh9L4bWuOyM","How to Properly Perform a Barbell Good Morning"],"seated_leg_curl":["Z5pRnXaCjpM","Seated Leg Curl: How To"],"nordic_curl":["3-4pKUhkzoQ","Nordic Hamstring Curls for Beginners (In 1 Minute!)"],"sl_db_rdl":["k83AIfjDbnI","How to do a Dumbbell or Kettlebell Single-Leg RDL"],"ghr":["RtwVVDS3vAM","How to Do Glute-Ham Raises"],"cable_kickback":["VSgMyiOu0uE","How to Do Cable Glute Kickbacks"],"cable_pull_through":["yXopOhzEoeo","How to PROPERLY Perform a Glute Pull Through"],"deficit_reverse_lunge":["CwoTM6dNyXk","Dumbbell Deficit Reverse Lunge Exercise Tutorial"],"db_sumo_squat":["Sq88Uw0roVU","How to Do a Sumo Squat With Dumbbells"],"sl_hip_thrust":["GoqoWSAiOsA","Single leg hip thrust: shoulders on bench"],"curtsy_lunge":["6GCLb9JurOU","How to Do a Curtsy Lunge Correctly"],"seated_calf_raise":["QCfQyNXEzS8","How to do Seated Calf Raises"],"donkey_calf_raise":["aHOudYjiB9A","Instructional Fitness - Donkey Calf Raises"],"tib_raise":["dnxy5DhY0Ks","Tibialis Raise (Against Wall)"],"bicycle_crunch":["VaL7XWK3MVE","How to Do a Bicycle Crunch Exercise"],"plank":["BQu26ABuVS0","How to Plank Properly for Beginners - Step By Step Tutorial"],"situp":["zoL7eingzkQ","How to Do Perfect Sit Ups"],"side_plank":["pitOuJxdyI0","How to do a Side Plank"],"pallof_press":["2sW5qodcOak","How to: Cable Pallof Press"],"captains_chair_raise":["nBsP27-x7LU","How To Do A CAPTAIN'S CHAIR LEG RAISE"],"cable_woodchop":["PCQCwP1Xy0g","How to perform a Cable Wood Chop"],"russian_twist":["TfTUk2AjV7g","Russian Twists with Dumbbell"],"dragon_flag":["QjFaOicE_VI","How-To: Dragon Flag [Beginner Tutorial]"],"decline_situp":["ZofTk8OuTKE","How To Do Weighted Decline Sit-Ups"]};
+const vidOf = ex => {
+  if (!ex) return null; const o = (state.vidOver || {})[ex.id];
+  return o ? [o, 'Your video'] : VIDEOS[ex.id] || null;
+};
+const vidSearch = ex => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(ex.name.replace(/\s*\((?:Total|Added Wt|Bars \/ Chairs|seconds)[^)]*\)/gi, '') + ' proper form');
+/* the animated thumbnail that opens the player. size: sm (lists), md (Focus), lg (info sheet) */
+function thumbBtn(ex, size) {
+  if (!ex) return ''; const fig = figSvg(ex), v = vidOf(ex);
+  if (!fig && !v) return '';
+  return `<button class="thumb ${size || 'sm'}${fig ? '' : ' nofig'}" data-a="exVideo" data-id="${ex.id}" aria-label="Play how-to for ${esc(ex.name)}">${fig || ic('activity', 'tbig')}<span class="pbadge">${ic('play', 'fill')}</span>${size === 'lg' ? `<span class="tcap">${v ? 'Play how-to video' : 'Find a how-to video'}</span>` : ''}</button>`;
+}
+const vidId = s => { s = (s || '').trim(); const m = s.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/); return m ? m[1] : /^[\w-]{11}$/.test(s) ? s : null; };
+function vidFrame(id) {
+  return `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="How-to video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+}
+A.exVideo = el => {
+  const ex = exById(el.dataset.id); if (!ex) return;
+  const v = vidOf(ex), fig = figSvg(ex, 'big'), off = navigator.onLine === false;
+  const steps = HOW[ex.id] || [ex.cue || 'Control the weight and use a full range of motion.'];
+  const top = !v ? `<div class="vwrap fig">${fig || ''}<div class="voff">No video picked for this one yet. Search YouTube below, or paste a link with Change video.</div></div>`
+    : off ? `<div class="vwrap fig">${fig || ''}<div class="voff">${ic('info', 'sm')} The video needs internet. The animation shows the movement.<button class="btn sec sm" data-a="exVideo" data-id="${ex.id}">${ic('refresh')} Try again</button></div></div>`
+    : `<div class="vwrap">${vidFrame(v[0])}</div><div class="mut xs vtitle">${esc(v[1])}</div>`;
+  openSheet(ex.name, `<div class="col vsheet" data-id="${ex.id}">${top}
+    <div class="vmove">${!off && fig ? `<div class="vfig">${fig}</div>` : ''}<ol class="how grow">${steps.map((t, k) => `<li><b>${steps.length > 1 ? ['Set up', 'Move', 'Watch for'][k] || 'Tip' : 'Cue'}</b><span>${esc(t)}</span></li>`).join('')}</ol></div>
+    <div class="grid2">${v ? `<a class="btn sec" href="https://www.youtube.com/watch?v=${v[0]}" target="_blank" rel="noopener noreferrer">${ic('link')} Open in YouTube</a>` : ''}<a class="btn sec" href="${vidSearch(ex)}" target="_blank" rel="noopener noreferrer">${ic('play')} Other videos</a></div>
+    <div id="vchg"><button class="btn ghost sm full" data-a="vidChange" data-id="${ex.id}">${ic('pencil', 'sm')} Change video</button></div>
+    <p class="mut xs center">Videos play from YouTube and load only when you open one.</p>
+    <div class="grid2"><button class="btn sec" data-a="exInfo" data-id="${ex.id}">${ic('info')} Details</button><button class="btn pri" data-a="closeSheet">Done</button></div></div>`,
+    { onClose: () => document.querySelectorAll('#sheet-b iframe').forEach(f => f.remove()) });
+};
+A.vidChange = el => {
+  const id = el.dataset.id, own = (state.vidOver || {})[id];
+  $('#vchg').innerHTML = `<div class="col gap6"><label class="mut xs" for="vid-in">Paste a YouTube link</label><input id="vid-in" type="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…">
+    <div class="grid2">${own ? `<button class="btn sec" data-a="vidReset" data-id="${id}">Use default</button>` : `<button class="btn sec" data-a="exVideo" data-id="${id}">Cancel</button>`}<button class="btn pri" data-a="vidSave" data-id="${id}">Save video</button></div></div>`;
+  $('#vid-in').focus();
+};
+A.vidSave = el => {
+  const v = vidId($('#vid-in').value); if (!v) { toast('That doesn’t look like a YouTube link'); return; }
+  state.vidOver = { ...(state.vidOver || {}), [el.dataset.id]: v }; scheduleSave(); toast('Video saved');
+  A.exVideo(el);
+};
+A.vidReset = el => {
+  const o = { ...(state.vidOver || {}) }; delete o[el.dataset.id]; state.vidOver = o; scheduleSave(); toast('Back to the default video');
+  A.exVideo(el);
+};
+
 /* ---------- recovery tab: readiness ring, flip-card body map, single-track sliders ---------- */
 /* Muscle regions are drawn for the left half of the figure and mirrored, so each region is one clickable group. */
 const BODY_BASE = {
@@ -3341,7 +3679,7 @@ function focusHtml() {
   const all = nextOpen(0) < 0 ? `<div class="banner ok fdone"><div class="grow"><b>Every set is logged</b><div class="mut sm">Nice work. End the workout to see your summary.</div></div><button class="btn pri" data-a="endWorkout">Finish</button></div>` : '';
   if (!ex) return `<div class="card focus" id="focus">${nav}</div>`;
   if (it.cardio) {
-    return `<div class="card focus" id="focus">${nav}<div class="mut xs fcount">Exercise ${i + 1} of ${n}</div><div class="row gap6 wrap"><span class="tag">Cardio</span></div><h2 class="fname">${esc(ex.name)}</h2>
+    return `<div class="card focus" id="focus">${nav}<div class="mut xs fcount">Exercise ${i + 1} of ${n}</div><div class="row gap6 wrap"><span class="tag">Cardio</span></div><div class="fhead"><div class="grow"><h2 class="fname">${esc(ex.name)}</h2></div>${thumbBtn(ex, 'md')}</div>
       <div class="steps one">${`<div class="stepper"><span class="flab">Minutes</span><div class="sctl"><button data-a="fStepC" data-i="${i}" data-d="-1" aria-label="Fewer minutes">${ic('minus')}</button><input inputmode="decimal" value="${it.min || ''}" data-f="cardio" data-k="min" data-i="${i}" aria-label="Minutes"><button data-a="fStepC" data-i="${i}" data-d="1" aria-label="More minutes">${ic('plus')}</button></div></div>`}</div>
       <button class="btn ${it.done ? 'sec' : 'pri hero'} full mt8" data-a="cardioDone" data-i="${i}">${it.done ? ic('check') + ' Completed · tap to undo' : ic('check') + ' Mark complete'}</button>${all}</div>`;
   }
@@ -3355,7 +3693,7 @@ function focusHtml() {
   return `<div class="card focus${sessPaused() ? ' dimmed' : ''}" id="focus" data-i="${i}">${nav}
     <div class="mut xs fcount">Exercise ${i + 1} of ${n}</div>
     <div class="row gap6 wrap"><span class="tag ${recCol(pct)}">${esc(ex.primary)} ${pct}%</span>${mainTag(it)}${stalledTag(ex)}${it.superset ? `<span class="tag vi">Superset ${esc(it.superset)}</span>` : ''}</div>
-    <h2 class="fname">${esc(ex.name)}</h2>${last ? `<div class="mut sm">Last time: ${last.slice(0, 4).map(x => `${x.w}×${x.r}`).join(' · ')}</div>` : ''}
+    <div class="fhead"><div class="grow"><h2 class="fname">${esc(ex.name)}</h2>${last ? `<div class="mut sm">Last time: ${last.slice(0, 4).map(x => `${x.w}×${x.r}`).join(' · ')}</div>` : ''}</div>${thumbBtn(ex, 'md')}</div>
     ${coach}
     <div class="fset ${s.done ? 'done' : ''}"><div class="row sp"><b class="fwhat">${what}</b>${s.done ? `<span class="tag gr">${ic('check', 'sm')} Logged</span>` : ''}</div>
       <div class="steps">${stepper(i, j, 'weight', unit(), s.weight, ph ? ph.w : '', 'decimal')}${stepper(i, j, 'reps', 'Reps', s.reps, ph ? ph.r : '', 'numeric')}</div>
@@ -4242,7 +4580,7 @@ function renderMore() {
     <h3 class="grpt">Data &amp; app</h3>
     <div class="card icard">${grp('data', 'database', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}${grp('integ', 'plug', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}${grp('adv', 'sliders', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}</div>
 
-    <p class="foot">ForgeFit v${APP_VER} · Private-First · Zero Tracking</p>`;
+    <p class="foot">ForgeFit v${APP_VER} · Private-First · No accounts · Your data stays on this phone</p>`;
 }
 A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
 A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };

@@ -71,7 +71,7 @@ const H = require('./h'); const { chromium } = require('playwright');
     await page.click('#nav-more');
     H.check('profile banner: 48px avatar monogram, goal chips, vitals', await page.evaluate(() => { const a = document.querySelector('.avatar'); return Math.round(a.getBoundingClientRect().width) === 48 && a.textContent.length >= 1 && document.querySelectorAll('.pchips span').length >= 2 && document.querySelector('.vit').textContent.includes('yrs'); }));
     H.check('three inset grouped cards with 4 + 3 + 3 rows', await page.evaluate(() => [...document.querySelectorAll('.icard')].map(c => c.querySelectorAll('.irow').length).join() === '4,3,3' && [...document.querySelectorAll('.icard')].every(c => getComputedStyle(c).overflow === 'hidden' && getComputedStyle(c).borderRadius === '16px')));
-    H.check('footer signature', (await page.locator('.foot').innerText()).includes('Private-First · Zero Tracking'));
+    H.check('footer signature', (await page.locator('.foot').innerText()).includes('Private-First · No accounts'));
     await page.click('[data-a=moreGrp][data-k=display]'); H.check('rows still expand in place', await page.locator('.irow.open:has([data-k=display]) .grpb').count() === 1);
     // --- no sideways scroll at 360
     await page.setViewportSize({ width: 360, height: 780 });

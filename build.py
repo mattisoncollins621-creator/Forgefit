@@ -21,12 +21,12 @@ css=open('src/style.css').read(); body=open('src/body.html').read()
 import re as _re
 body=_re.sub(r'\{\{ic:([a-z-]+)\}\}',lambda m:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[m.group(1)]+'</svg>',body)
 js=''
-for i,f in enumerate(['core.js','ui.js','extras.js','more.js','session.js','recovery.js','focus.js','calib.js','charts.js','sharecard.js','datasafe.js','platform.js','features.js']):
+for i,f in enumerate(['core.js','ui.js','extras.js','more.js','session.js','anim.js','video.js','recovery.js','focus.js','calib.js','charts.js','sharecard.js','datasafe.js','platform.js','features.js']):
     s=open('src/'+f).read()
     if i: s=s.replace("'use strict';\n",'',1)
     js+=s+'\n'
 import re
 ver=re.search(r"forgefit-v(\d+)",open('sw.js').read()).group(1)
-js=js.replace('__APP_VER__',ver).replace('__ICONS__',json.dumps(ICONS,separators=(',',':')))
+js=js.replace('__APP_VER__',ver).replace('__ICONS__',json.dumps(ICONS,separators=(',',':'))).replace('__VIDEOS__',json.dumps(json.load(open('src/videos.json')),separators=(',',':'),ensure_ascii=False))
 open('index.html','w').write(head+css+'</style>\n</head>\n<body>\n'+body+'<script>\n'+js+'</script>\n</body>\n</html>\n')
 open('/tmp/all.js','w').write(js)

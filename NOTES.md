@@ -20,6 +20,8 @@ The Netlify site must stay **public**. Netlify "access protection" makes `sw.js`
 | `extras.js` | Swipe gestures, banners, people/profiles, exercise info sheet, stalls, heatmap data, weekly sets |
 | `more.js` | Exercise history sheet, onboarding pieces, misc tools |
 | `session.js` | Plan rows, live session (start/pause/end/edit), calorie estimate, achievements, finish summary |
+| `anim.js` | Exercise animations: a side-view line figure posed per movement (`MOVES`, `EX_MOVE` maps exercise id → movement), `figSvg(ex)`, one shared animation loop; small tiles zoom to the figure (`fitBox`) |
+| `video.js` | How-to videos: `VIDEOS` (from `videos.json`), `thumbBtn(ex,size)` animated tile with play badge, `A.exVideo` in-app player (youtube-nocookie embed, offline fallback, per-person override `state.vidOver`) |
 | `recovery.js` | Recovery tab: readiness ring, flip-card body map (`bodySvg`, also reused elsewhere), single-track sliders |
 | `focus.js` | Focus view (one exercise at a time) and auto-advance |
 | `calib.js` | "Find your working weight" calibration |
@@ -30,6 +32,7 @@ The Netlify site must stay **public**. Netlify "access protection" makes `sw.js`
 | `features.js` | Progress / Body / Settings tabs, charts (`lineChart`), backup/import, update engine, event binding and boot. **Must stay last.** |
 | `style.css` | All styles. Later blocks override earlier ones; the newest design system starts at the `v11`/`v12` blocks. |
 | `body.html` | Static page shell (header, tab bar, sheet, overlays) |
+| `videos.json` | One YouTube tutorial per exercise: `{"exId": ["videoId", "title"]}`. Injected by `build.py` as `__VIDEOS__`. Picked by title; swap any that turn out poor. |
 | `icons.json` | Inline SVG icons, used as `ic('name')` in JS or `{{ic:name}}` in `body.html` |
 
 Conventions:
@@ -47,7 +50,7 @@ Conventions:
 - Every animation sits behind `prefers-reduced-motion: no-preference`.
 
 ## Tests
-`tests/` holds Playwright suites `testA`–`testR` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
+`tests/` holds Playwright suites `testA`–`testS` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
 - the app source at `/home/claude/forgefit`
 - tests run from `/tmp/t`, with files served from `/tmp/t/www` and screenshots written to `/tmp/t/out`
 - `/tmp/t/index_v_prev.html` holds an older build, used by the update tests

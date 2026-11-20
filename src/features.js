@@ -601,7 +601,7 @@ function renderMore() {
     <h3 class="grpt">Data &amp; app</h3>
     <div class="card icard">${grp('data', 'database', 'Data &amp; backup', state.lastExport ? 'Last backup ' + fmtDate(state.lastExport) : 'No backup yet', sets.data)}${grp('integ', 'plug', 'Integrations', 'Health apps, lock screen, watch', sets.integ)}${grp('adv', 'sliders', 'App version &amp; advanced', 'v' + APP_VER + ' · updates, baselines', sets.adv)}</div>
 
-    <p class="foot">ForgeFit v${APP_VER} · Private-First · Zero Tracking</p>`;
+    <p class="foot">ForgeFit v${APP_VER} · Private-First · No accounts · Your data stays on this phone</p>`;
 }
 A.moreGrp = el => { const k = el.dataset.k, y = window.scrollY; if (moreOpen.has(k)) moreOpen.delete(k); else moreOpen.add(k); renderMore(); window.scrollTo(0, y); };
 A.moreAll = () => { const ks = ['display', 'training', 'sound', 'timers', 'gear', 'lib', 'people', 'data', 'integ', 'adv'], y = window.scrollY; if (ks.every(k => moreOpen.has(k))) moreOpen.clear(); else ks.forEach(k => moreOpen.add(k)); renderMore(); window.scrollTo(0, y); };
