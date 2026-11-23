@@ -311,9 +311,16 @@ function backupBanner() {
   return `<div class="banner note"><div class="grow"><b>Time for a backup</b><div class="mut sm">${last ? `It has been ${days} days since your last backup.` : 'You have not backed up yet.'} Save a copy to Files, Drive or email in about 10 seconds.</div></div><div class="col gap6"><button class="mini pri" data-a="bakQuick">Back up</button><button class="mini" data-a="backupLater">Later</button></div></div>`;
 }
 A.backupLater = () => { state.backupSnooze = Date.now() + 3 * DAY; scheduleSave(); renderWorkout(); };
-function topBanners() {
-  const list = [coachBanner(), blockBanner(), backupBanner(), nudgeBanner(), recapBanner()].filter(Boolean).slice(0, 2);
-  return list.join('') + whatsNew();
+function topBanners() {                         // every tip in one compact card; swipe for the next one, tap to read it all
+  const list = [coachBanner(), blockBanner(), backupBanner(), nudgeBanner(), recapBanner()].filter(Boolean).slice(0, 4);
+  if (!list.length) return whatsNew();
+  const dots = list.length > 1 ? `<div class="cdots" aria-hidden="true">${list.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div>` : '';
+  return `<section class="tips" aria-label="Coach tips"><div class="coachrow${list.length > 1 ? ' multi' : ''}">${list.map(b => `<div class="cslide" data-a="coachOpen">${b}</div>`).join('')}</div>${dots}</section>` + whatsNew();
+}
+A.coachOpen = el => el.classList.toggle('open');
+function wireCoach() {
+  const r = $('.coachrow.multi'); if (!r) return;
+  r.addEventListener('scroll', () => { const i = Math.round(r.scrollLeft / (r.firstElementChild.offsetWidth + 8)); r.parentNode.querySelectorAll('.cdots i').forEach((d, k) => d.classList.toggle('on', k === i)); }, { passive: true });
 }
 
 /* ---------- profiles (several people on one phone) ---------- */
@@ -532,7 +539,7 @@ function bodyVsStrength() {
   const bwp = state.measures.filter(m => +m.weight > 0 && m.t >= from).sort((a, b) => a.t - b.t).map(m => ({ t: m.t, v: cvt(+m.weight, m.unit) }));
   const lifts = Object.keys(state.e1rmHist).map(id => ({ id, ex: exById(id), pts: state.e1rmHist[id].filter(p => p.t >= from).sort((a, b) => a.t - b.t) })).filter(l => l.ex && !l.ex.bw && !l.ex.noE1 && l.pts.length >= 2);
   const head = '<div class="row sp"><h2 class="h2">Bodyweight vs strength</h2></div>';
-  if (bwp.length < 2 || !lifts.length) return `<div class="card">${head}<div class="empty">${!lifts.length ? 'Log a few sessions with the same lifts to see your strength trend.' : 'Log your weight on at least two days in the Body tab to compare it with your strength.'}</div></div>`;
+  if (bwp.length < 2 || !lifts.length) return `<div class="card">${head}${!lifts.length ? ghost('two', 'Log a few sessions with the same lifts to see your strength next to your body weight.') : ghost('two', 'Log your weight on at least two days to compare it with your strength.', goBtn('body', 'Log weight'))}</div>`;
   const times = [...new Set(lifts.flatMap(l => l.pts.map(p => p.t)))].sort((a, b) => a - b), step = Math.max(1, Math.ceil(times.length / 60)), sample = times.filter((_, i) => i % step === 0 || i === times.length - 1);
   const idx = sample.map(t => {
     let sum = 0, n = 0; lifts.forEach(l => { let v = null; for (const p of l.pts) { if (p.t <= t) v = p.v; else break; } if (v != null) { sum += v / l.pts[0].v; n++; } });

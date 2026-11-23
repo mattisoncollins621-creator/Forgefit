@@ -935,6 +935,50 @@ svg.anim .bf{fill:currentColor;opacity:.42}
 svg.anim .shd{fill:#000;opacity:.32}
 :root[data-theme=light] svg.anim .shd{opacity:.1}
 svg.anim rect.db{stroke:none}
+/* v22: calmer Workout tab. Session first, tips folded into one swipeable coach card */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hnote{display:flex;align-items:center;gap:8px;width:100%;margin:6px 0 2px;padding:0;background:none;border:0;color:var(--mut);font-size:12.5px;text-align:left}
+.hnote .hn1{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hnote .hwhy{flex:none;display:inline-flex;align-items:center;gap:2px;color:var(--tx2);font-weight:600}
+.hnote .hwhy .ic{width:14px;height:14px}
+.whyl{margin:0 0 14px;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.whyl li{position:relative;padding-left:16px;font-size:14px;line-height:1.45;color:var(--tx2)}
+.whyl li::before{content:"";position:absolute;left:2px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.tips{display:flex;flex-direction:column;gap:6px}
+.coachrow{display:flex;gap:8px}
+.coachrow.multi{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding:0 16px}
+.coachrow.multi::-webkit-scrollbar{display:none}
+.cslide{flex:0 0 100%;scroll-snap-align:start;display:flex}
+.coachrow.multi .cslide{flex-basis:calc(100% - 26px)}
+.cslide>.banner{flex:1;display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0}
+.cslide>.banner>:not(.grow){align-self:flex-start}
+.cslide>.banner b{font-size:15px}
+.cslide .banner .mut.sm,.cslide .banner ul{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cslide .banner ul{margin:4px 0 0;padding-left:16px;font-size:13px;color:var(--tx3)}
+.cslide .banner ul li:nth-child(n+2){display:none}
+.cslide.open .banner .mut.sm,.cslide.open .banner ul{display:block;-webkit-line-clamp:unset}
+.cslide.open .banner ul li{display:list-item}
+.cdots{display:flex;justify-content:center;gap:5px}
+.cdots i{width:5px;height:5px;border-radius:3px;background:var(--b2,rgba(255,255,255,.14));transition:width .2s,background .2s}
+.cdots i.on{width:14px;background:var(--tx3)}
+/* one orange action per screen: buttons inside tips are quiet */
+.banner .mini.pri,.banner .btn.pri{background:var(--btn);border:1px solid var(--bd);color:var(--tx)}
+.cslide .banner>.col{flex-direction:row;flex-wrap:wrap}
+/* play badges: dark glass, so a list of exercises isn't dotted with orange */
+.pbadge{background:rgba(10,12,16,.82);border-color:var(--card)!important;box-shadow:none}
+.pbadge .ic{color:#F8FAFC}
+.thumb.lg .pbadge{background:rgba(10,12,16,.72);border:1px solid rgba(255,255,255,.18)}
+:root[data-theme=light] .pbadge{background:#1E293B}
+/* ghost previews for empty charts: a faded sample of the chart, the next step underneath */
+.ghost{border:0;padding:4px 0 0;background:none;display:flex;flex-direction:column;align-items:center;gap:10px}
+.gsvg{display:block;width:100%;height:96px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent);mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent)}
+.gsvg .gg{stroke:var(--bd);stroke-width:1;fill:none;stroke-dasharray:3 5;vector-effect:non-scaling-stroke}
+.gsvg .ga{fill:var(--tx3);opacity:.08}
+.gsvg .gl{stroke:var(--tx3);stroke-width:2.5;fill:none;opacity:.38;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.gsvg .gl2{stroke:var(--tx3);stroke-width:2;fill:none;opacity:.25;stroke-dasharray:5 5;vector-effect:non-scaling-stroke}
+.gsvg .gd{fill:var(--tx3);opacity:.4}
+.gmsg{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:270px;text-align:center;padding:0 8px 6px}
+.gmsg p{margin:0;font-size:13.5px;line-height:1.45;color:var(--tx3)}
 </style>
 </head>
 <body>
@@ -999,7 +1043,7 @@ const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(3
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KG = 0.45359237;
 /* ---------- icons: one inline SVG set (24px grid, 1.75 stroke) ---------- */
-const ICONS = {"close":"<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>","check":"<path d=\"M20 6 9 17l-5-5\"/>","star":"<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>","play":"<polygon points=\"6 3 20 12 6 21 6 3\"/>","pause":"<rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/>","stop":"<rect x=\"5\" y=\"5\" width=\"14\" height=\"14\" rx=\"2\"/>","swap":"<path d=\"M8 3 4 7l4 4\"/><path d=\"M4 7h16\"/><path d=\"m16 21 4-4-4-4\"/><path d=\"M20 17H4\"/>","more":"<circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"19\" cy=\"12\" r=\"1\"/><circle cx=\"5\" cy=\"12\" r=\"1\"/>","grip":"<circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/>","flame":"<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>","trophy":"<path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/>","zap":"<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>","link":"<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>","message":"<path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/>","clipboard":"<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"/>","repeat":"<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>","calendar":"<path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/>","dumbbell":"<path d=\"M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11\"/>","activity":"<path d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"/>","trend":"<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\"/><polyline points=\"16 7 22 7 22 13\"/>","chart":"<line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"10\"/><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"4\"/><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"16\"/>","book":"<path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/>","palette":"<circle cx=\"13.5\" cy=\"6.5\" r=\".5\"/><circle cx=\"17.5\" cy=\"10.5\" r=\".5\"/><circle cx=\"8.5\" cy=\"7.5\" r=\".5\"/><circle cx=\"6.5\" cy=\"12.5\" r=\".5\"/><path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\"/>","volume":"<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"/><path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\"/>","timer":"<line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"/><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>","wrench":"<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z\"/>","library":"<path d=\"m16 6 4 14\"/><path d=\"M12 6v14\"/><path d=\"M8 8v12\"/><path d=\"M4 4v16\"/>","users":"<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>","user":"<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>","database":"<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5V19A9 3 0 0 0 21 19V5\"/><path d=\"M3 12A9 3 0 0 0 21 12\"/>","plug":"<path d=\"M12 22v-5\"/><path d=\"M9 8V2\"/><path d=\"M15 8V2\"/><path d=\"M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z\"/>","sliders":"<line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\"/><line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\"/><line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\"/><line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\"/><line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\"/><line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\"/><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\"/><line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\"/><line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\"/>","pencil":"<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/><path d=\"m15 5 4 4\"/>","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>","down":"<path d=\"m6 9 6 6 6-6\"/>","right":"<path d=\"m9 18 6-6-6-6\"/>","up":"<path d=\"m18 15-6-6-6 6\"/>","arrow-up":"<path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/>","arrow-down":"<path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/>","drop":"<polyline points=\"15 10 20 15 15 20\"/><path d=\"M4 4v7a4 4 0 0 0 4 4h12\"/>","music":"<path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/>","target":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>","sparkles":"<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/><path d=\"M20 3v4\"/><path d=\"M22 5h-4\"/>","check-circle":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/>","flag":"<path d=\"M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z\"/><line x1=\"4\" x2=\"4\" y1=\"22\" y2=\"15\"/>","plus":"<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>","plates":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","clock":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/>","dot":"<circle cx=\"12\" cy=\"12\" r=\"5\"/>","back":"<path d=\"m15 18-6-6 6-6\"/>","share":"<path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\"/><polyline points=\"16 6 12 2 8 6\"/><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"15\"/>","image":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/>","bolt-eye":"<path d=\"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","info":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5\"/><path d=\"M12 8h.01\"/>","settings":"<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","refresh":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"/><path d=\"M8 16H3v5\"/>","minus":"<path d=\"M5 12h14\"/>","trash":"<path d=\"M3 6h18\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/>"};
+const ICONS = {"close":"<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>","check":"<path d=\"M20 6 9 17l-5-5\"/>","star":"<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>","play":"<polygon points=\"6 3 20 12 6 21 6 3\"/>","pause":"<rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/>","stop":"<rect x=\"5\" y=\"5\" width=\"14\" height=\"14\" rx=\"2\"/>","swap":"<path d=\"M8 3 4 7l4 4\"/><path d=\"M4 7h16\"/><path d=\"m16 21 4-4-4-4\"/><path d=\"M20 17H4\"/>","more":"<circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"19\" cy=\"12\" r=\"1\"/><circle cx=\"5\" cy=\"12\" r=\"1\"/>","grip":"<circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/>","flame":"<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>","trophy":"<path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/>","zap":"<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>","link":"<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>","message":"<path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/>","clipboard":"<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"/>","repeat":"<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>","calendar":"<path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/>","dumbbell":"<path d=\"M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11\"/>","activity":"<path d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"/>","trend":"<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\"/><polyline points=\"16 7 22 7 22 13\"/>","chart":"<line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"10\"/><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"4\"/><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"16\"/>","book":"<path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/>","palette":"<circle cx=\"13.5\" cy=\"6.5\" r=\".5\"/><circle cx=\"17.5\" cy=\"10.5\" r=\".5\"/><circle cx=\"8.5\" cy=\"7.5\" r=\".5\"/><circle cx=\"6.5\" cy=\"12.5\" r=\".5\"/><path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\"/>","volume":"<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"/><path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\"/>","timer":"<line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"/><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>","wrench":"<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z\"/>","library":"<path d=\"m16 6 4 14\"/><path d=\"M12 6v14\"/><path d=\"M8 8v12\"/><path d=\"M4 4v16\"/>","users":"<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>","user":"<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>","database":"<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5V19A9 3 0 0 0 21 19V5\"/><path d=\"M3 12A9 3 0 0 0 21 12\"/>","plug":"<path d=\"M12 22v-5\"/><path d=\"M9 8V2\"/><path d=\"M15 8V2\"/><path d=\"M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z\"/>","sliders":"<line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\"/><line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\"/><line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\"/><line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\"/><line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\"/><line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\"/><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\"/><line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\"/><line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\"/>","pencil":"<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/><path d=\"m15 5 4 4\"/>","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>","down":"<path d=\"m6 9 6 6 6-6\"/>","right":"<path d=\"m9 18 6-6-6-6\"/>","up":"<path d=\"m18 15-6-6-6 6\"/>","arrow-up":"<path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/>","arrow-down":"<path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/>","drop":"<polyline points=\"15 10 20 15 15 20\"/><path d=\"M4 4v7a4 4 0 0 0 4 4h12\"/>","music":"<path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/>","target":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>","sparkles":"<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/><path d=\"M20 3v4\"/><path d=\"M22 5h-4\"/>","check-circle":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/>","flag":"<path d=\"M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z\"/><line x1=\"4\" x2=\"4\" y1=\"22\" y2=\"15\"/>","plus":"<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>","plates":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","clock":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/>","dot":"<circle cx=\"12\" cy=\"12\" r=\"5\"/>","back":"<path d=\"m15 18-6-6 6-6\"/>","share":"<path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\"/><polyline points=\"16 6 12 2 8 6\"/><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"15\"/>","image":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/>","bolt-eye":"<path d=\"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","info":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5\"/><path d=\"M12 8h.01\"/>","settings":"<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","refresh":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"/><path d=\"M8 16H3v5\"/>","minus":"<path d=\"M5 12h14\"/>","trash":"<path d=\"M3 6h18\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/>","chevR":"<path d=\"m9 6 6 6-6 6\"/>"};
 const ic = (n, c) => `<svg class="ic${c ? ' ' + c : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 /* ---------- live session (started / paused) ---------- */
 const SESSK = ['startedAt', 'pausedAt', 'pausedMs', 'pausedRest', 'pausedLabel'];
@@ -1013,7 +1057,7 @@ const fmtDate = (t, o) => new Date(t).toLocaleDateString('en-US', o || { month: 
 const fmtDT = t => fmtDate(t) + ' ' + new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const APP_VER = '21';   // filled in by build.py from sw.js so the two can never disagree
+const APP_VER = '22';   // filled in by build.py from sw.js so the two can never disagree
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- exercise database ---------- */
@@ -1890,24 +1934,28 @@ function renderWorkout() {
   } else {
     const st = planStats(), n = w.items.length, trimM = /trimmed (\d+)%/.exec(w.note || ''), trimmed = w.items.some(it => it.trimmed);
     tabEl.innerHTML = `
-    ${topBanners()}
-    ${weekCard()}
     <div class="chips scrollx snapx splits" role="tablist" aria-label="Training split">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="split" data-v="${k}">${l}</button>`).join('')}</div>
     <div class="card hero-card">
       <div class="row sp top"><div class="grow"><h2 class="ttl">${esc(w.name)}</h2>
         <div class="mchips"><span>${n} exercise${n === 1 ? '' : 's'}</span><span>~${st.min} min</span>${trimmed ? `<span class="am">${trimM ? trimM[1] + '% ' : ''}auto-trim active</span>` : ''}</div></div>
         <button class="ib" data-a="regen" aria-label="Regenerate workout" title="Regenerate">${ic('refresh')}</button></div>
-      ${w.note ? `<p class="mut xs hnote">${esc(w.note)}</p>` : ''}
+      ${w.note ? `<button class="hnote" data-a="planWhy"><span class="hn1">${esc(w.note.split(' · ')[0])}</span><span class="hwhy">Why this plan ${ic('chevR')}</span><span class="sr">${esc(w.note)}</span></button>` : ''}
       ${todayHits(w.items)}
       <div class="toolbar"><button data-a="autoSuper">${ic('link')}<span>Supersets</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="nl">${ic('timer')}<span>Quick log</span></button><button data-a="wkMore" aria-label="More options">${ic('more')}<span>More</span></button></div>
     </div>
+    ${topBanners()}
     ${list}
+    ${weekCard()}
     ${n ? `<button class="btn pri hero fab" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}`;
   }
   document.body.classList.toggle('hasfab', tab === 'workout' && !live && !!w.items.length);
-  paintClock(); tickSess();
+  wireCoach(); paintClock(); tickSess();
 }
 R.workout = renderWorkout;
+A.planWhy = () => {                              // the full reasoning behind today's plan, one point per line
+  const w = wk(); if (!w.note) return;
+  openSheet('Why this plan', `<ul class="whyl">${w.note.split(' · ').map(t => `<li>${esc(t)}</li>`).join('')}</ul><button class="btn sec full" data-a="closeSheet">Got it</button>`);
+};
 function todayHits(items) {                      // mini front/back figure + the muscles today's plan works most
   const L = itemsLoad(items), top = MUSCLES.filter(m => L[m] >= .5).sort((a, b) => L[b] - L[a]); if (!top.length) return '';
   const mx = L[top[0]], W = {}; top.forEach(m => W[m] = L[m] / mx);
@@ -2576,9 +2624,16 @@ function backupBanner() {
   return `<div class="banner note"><div class="grow"><b>Time for a backup</b><div class="mut sm">${last ? `It has been ${days} days since your last backup.` : 'You have not backed up yet.'} Save a copy to Files, Drive or email in about 10 seconds.</div></div><div class="col gap6"><button class="mini pri" data-a="bakQuick">Back up</button><button class="mini" data-a="backupLater">Later</button></div></div>`;
 }
 A.backupLater = () => { state.backupSnooze = Date.now() + 3 * DAY; scheduleSave(); renderWorkout(); };
-function topBanners() {
-  const list = [coachBanner(), blockBanner(), backupBanner(), nudgeBanner(), recapBanner()].filter(Boolean).slice(0, 2);
-  return list.join('') + whatsNew();
+function topBanners() {                         // every tip in one compact card; swipe for the next one, tap to read it all
+  const list = [coachBanner(), blockBanner(), backupBanner(), nudgeBanner(), recapBanner()].filter(Boolean).slice(0, 4);
+  if (!list.length) return whatsNew();
+  const dots = list.length > 1 ? `<div class="cdots" aria-hidden="true">${list.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div>` : '';
+  return `<section class="tips" aria-label="Coach tips"><div class="coachrow${list.length > 1 ? ' multi' : ''}">${list.map(b => `<div class="cslide" data-a="coachOpen">${b}</div>`).join('')}</div>${dots}</section>` + whatsNew();
+}
+A.coachOpen = el => el.classList.toggle('open');
+function wireCoach() {
+  const r = $('.coachrow.multi'); if (!r) return;
+  r.addEventListener('scroll', () => { const i = Math.round(r.scrollLeft / (r.firstElementChild.offsetWidth + 8)); r.parentNode.querySelectorAll('.cdots i').forEach((d, k) => d.classList.toggle('on', k === i)); }, { passive: true });
 }
 
 /* ---------- profiles (several people on one phone) ---------- */
@@ -2797,7 +2852,7 @@ function bodyVsStrength() {
   const bwp = state.measures.filter(m => +m.weight > 0 && m.t >= from).sort((a, b) => a.t - b.t).map(m => ({ t: m.t, v: cvt(+m.weight, m.unit) }));
   const lifts = Object.keys(state.e1rmHist).map(id => ({ id, ex: exById(id), pts: state.e1rmHist[id].filter(p => p.t >= from).sort((a, b) => a.t - b.t) })).filter(l => l.ex && !l.ex.bw && !l.ex.noE1 && l.pts.length >= 2);
   const head = '<div class="row sp"><h2 class="h2">Bodyweight vs strength</h2></div>';
-  if (bwp.length < 2 || !lifts.length) return `<div class="card">${head}<div class="empty">${!lifts.length ? 'Log a few sessions with the same lifts to see your strength trend.' : 'Log your weight on at least two days in the Body tab to compare it with your strength.'}</div></div>`;
+  if (bwp.length < 2 || !lifts.length) return `<div class="card">${head}${!lifts.length ? ghost('two', 'Log a few sessions with the same lifts to see your strength next to your body weight.') : ghost('two', 'Log your weight on at least two days to compare it with your strength.', goBtn('body', 'Log weight'))}</div>`;
   const times = [...new Set(lifts.flatMap(l => l.pts.map(p => p.t)))].sort((a, b) => a - b), step = Math.max(1, Math.ceil(times.length / 60)), sample = times.filter((_, i) => i % step === 0 || i === times.length - 1);
   const idx = sample.map(t => {
     let sum = 0, n = 0; lifts.forEach(l => { let v = null; for (const p of l.pts) { if (p.t <= t) v = p.v; else break; } if (v != null) { sum += v / l.pts[0].v; n++; } });
@@ -3669,7 +3724,7 @@ function renderRecovery() {
   updatePassiveRecovery();
   const coach = coachBanner(), avg = avgRecovery(), dots = ['front', 'back'].map(s => `<button class="dot${recSide === s ? ' on' : ''}" data-a="recFlip" data-v="${s}" aria-label="Show ${s} view"></button>`).join('');
   $('#tab-recovery').innerHTML = `
-    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Each muscle recovers at its own speed. Feel sorer or fresher than shown? Drag its slider and ForgeFit learns your pace.</p></div></div>
+    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Feel sorer or fresher than shown? Drag that muscle's slider and ForgeFit learns your pace.</p></div></div>
       <div class="row gap6 pt8 wrap"><button class="gpill" data-a="resetRec">Reset to 100%</button><button class="gpill" data-a="simTime">+24h simulate</button>${coach ? '' : '<button class="gpill" data-a="startDeload">Deload anyway</button>'}</div></div>
     ${restCard()}
     ${coach}
@@ -4447,8 +4502,22 @@ function smoothPath(P) {
   }
   return d;
 }
+/* empty charts: a faded sample of what will appear, plus one plain next step */
+function ghost(kind, msg, cta) {
+  const lines = {
+    up: [[0, 82], [40, 76], [80, 70], [120, 64], [160, 52], [200, 48], [240, 36], [280, 30], [300, 24]],
+    down: [[0, 30], [50, 36], [100, 40], [150, 52], [200, 56], [250, 64], [300, 68]],
+  };
+  const path = ps => 'M' + ps.map(p => p.join(' ')).join('L');
+  const area = ps => path(ps) + 'L300 110L0 110Z';
+  const a = kind === 'two' ? lines.up : lines.up, b = kind === 'two' ? lines.down : null;
+  return `<div class="empty ghost"><svg class="gsvg" viewBox="0 0 300 110" preserveAspectRatio="none" aria-hidden="true">
+    <path class="gg" d="M0 27.5H300M0 55H300M0 82.5H300"/><path class="ga" d="${area(a)}"/><path class="gl" d="${path(a)}"/>${b ? `<path class="gl2" d="${path(b)}"/>` : ''}</svg>
+    <div class="gmsg"><p>${msg}</p>${cta || ''}</div></div>`;
+}
+const goBtn = (t, l) => `<button class="mini" data-a="go" data-t="${t}">${l} ${ic('chevR')}</button>`;
 function lineChart(pts, o = {}) {
-  if (!pts.length) return '<div class="empty">No data yet.</div>';
+  if (!pts.length) return ghost('up', o.empty || 'Your trend line appears after your first two entries.');
   const w = 340, h = o.h || 176, pl = 40, pr = 14, pt = 14, pb = 26, fmt = o.fmt || (v => Math.round(v * 10) / 10), gid = 'cg' + (++chartN);
   let x0 = Math.min(...pts.map(p => p.t)), x1 = Math.max(...pts.map(p => p.t)); if (x0 === x1) { x0 -= DAY; x1 += DAY; }
   const ys = pts.map(p => p.v); let y0 = Math.min(...ys), y1 = Math.max(...ys); const py = (y1 - y0) * .2 || Math.max(1, y1 * .05); y0 -= py; y1 += py;
@@ -4498,13 +4567,13 @@ function renderProgress() {
     <div class="card"><div class="row sp"><h2 class="h2">Strength curve</h2><select data-f="progRange" class="sel-sm"><option value="30" ${prog.range === 30 ? 'selected' : ''}>1 month</option><option value="90" ${prog.range === 90 ? 'selected' : ''}>3 months</option><option value="365" ${prog.range === 365 ? 'selected' : ''}>1 year</option><option value="0" ${prog.range === 0 ? 'selected' : ''}>All time</option></select></div>
       ${ids.length ? `<select data-f="progEx">${ids.map(id => `<option value="${id}" ${id === prog.ex ? 'selected' : ''}>${esc(exById(id).name)}</option>`).join('')}</select>
       <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts, { u: unit() })}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
-      : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
+      : ghost('up', 'Your strength curve starts with your first logged workout.')}</div>
     ${bodyVsStrength()}
     <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="segp"><button class="${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
-      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day (secondary muscles count in proportion to how much they work).' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
+      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day, helper muscles included.' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
       <div class="heat">${MUSCLES.map(m => `<div class="hrow"><span>${m}</span><div class="hcells">${hd[m].map(cell).join('')}</div></div>`).join('')}</div>
       <div class="row sp mut xs"><span>${fmtDate(now - (days - 1) * DAY)}</span><span>Today</span></div></div>
-    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The green band is your target range for your goal and experience. Bars show the last 7 days; the mini chart is the last 4 weeks, oldest to newest.</p>
+    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">Last 7 days against your target range (green). The mini chart shows the last 4 weeks.</p>
       <div class="vlist">${MUSCLES.map(m => {
         const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), mx = Math.max(1, ...a, lo);
         const stat = cur >= lo && cur <= hi ? ['Optimal', 'gr'] : cur > hi ? ['Over', 'am'] : cur < lo * .5 ? ['Low', 'rd'] : ['Low', 'am'];
@@ -4515,7 +4584,7 @@ function renderProgress() {
     <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? `<div class="slist">${hist.slice(0, 12).map(h => {
       const d = h.t ? new Date(h.t) : null, meta = [h.dur ? h.dur + ' min' : '', d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : esc(h.legacyDate || ''), (h.cardio || []).length ? 'cardio' : ''].filter(Boolean).join(' · ');
       return `<div class="stile"><div class="dtile"><small>${d ? d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '—'}</small><b>${d ? String(d.getDate()).padStart(2, '0') : '–'}</b></div><div class="grow"><b class="sname">${esc(h.name || 'Session')}</b><div class="mut xs">${meta}</div></div><div class="spills"><span>${h.sets} sets</span><span>${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</span></div><button class="ib" data-a="histMenu" data-id="${h.id}" aria-label="Session options">${ic('more')}</button></div>`;
-    }).join('')}</div>` : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
+    }).join('')}</div>` : '<div class="empty">No sessions yet. Each workout you finish is listed here.</div>'}</div>`;
 }
 R.progress = renderProgress;
 F.progEx = el => { prog.ex = el.value; renderProgress(); };
@@ -4543,7 +4612,7 @@ function renderBody() {
     <div class="card"><h2 class="h2">Log measurements</h2><p class="mut xs">Fill in whatever you measured today.</p>
       <div class="grid3 pt8">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
       <button class="btn pri full mt8" data-a="measSave">Save measurements</button></div>
-    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="segp rng">${[[30, '1M'], [90, '3M'], [180, '6M'], [365, '1Y'], [0, 'All']].map(([v, l]) => `<button class="${bodyRange === v ? 'on' : ''}" data-a="bodyRange" data-v="${v}">${l}</button>`).join('')}</div>${lineChart(pts, { h: 190, u: bodyMetric === 'bf' ? '%' : bodyMetric === 'weight' ? unit() : u })}</div>
+    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="segp rng">${[[30, '1M'], [90, '3M'], [180, '6M'], [365, '1Y'], [0, 'All']].map(([v, l]) => `<button class="${bodyRange === v ? 'on' : ''}" data-a="bodyRange" data-v="${v}">${l}</button>`).join('')}</div>${lineChart(pts, { h: 190, u: bodyMetric === 'bf' ? '%' : bodyMetric === 'weight' ? unit() : u, empty: `Log ${(BM[bodyMetric] || 'it').replace(/ \(.*\)/, '').toLowerCase()} on two days and your trend appears here.` })}</div>
     <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="gpill" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="gpill add" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : `<div class="empty photoempty">${ic('image', 'xl')}<b>No photos yet</b><span>Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</span></div>`}</div></div>
     <div class="card"><h2 class="h2">History</h2>${ms.length ? `<div class="tline">${[...ms].reverse().slice(0, 15).map(m => `<div class="tl"><span class="tdot"></span><div class="tlc"><div class="row sp"><span class="dpill">${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</span><button class="ib" data-a="measDel" data-id="${m.id}" aria-label="Delete entry">${ic('close')}</button></div>
       <div class="mrows">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `<div class="mrow"><span>${BM[k]}</span><b>${m[k]} ${MU[k]}</b>${delta(m, k)}</div>`).join('')}</div></div></div>`).join('')}</div>` : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
@@ -4626,7 +4695,7 @@ function renderMore() {
     people: profCard(true),
     data: `<div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
-      <p class="mut xs">Changes auto-save instantly with a rolling backup copy on this device${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. That protects against crashes, not against losing the phone.</p>
+      <p class="mut xs">Everything saves automatically on this phone${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. A backup file is what protects you if the phone is lost.</p>
       <div class="grid2"><button class="btn sec" data-a="importJSON">Import backup</button><button class="btn sec" data-a="restoreBak">Restore auto-backup</button></div>
       <div class="field"><label for="bak-every">Remind me to back up</label><select id="bak-every" data-f="bakEvery">${[[7, 'Every week'], [14, 'Every 2 weeks'], [30, 'Every month'], [0, 'Never']].map(([v, l]) => `<option value="${v}" ${bakEvery() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <p class="mut xs" id="persist-line">Checking whether this phone protects ForgeFit's storage…</p>

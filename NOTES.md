@@ -50,7 +50,7 @@ Conventions:
 - Every animation sits behind `prefers-reduced-motion: no-preference`.
 
 ## Tests
-`tests/` holds Playwright suites `testA`–`testS` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
+`tests/` holds Playwright suites `testA`–`testT` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
 - the app source at `/home/claude/forgefit`
 - tests run from `/tmp/t`, with files served from `/tmp/t/www` and screenshots written to `/tmp/t/out`
 - `/tmp/t/index_v_prev.html` holds an older build, used by the update tests

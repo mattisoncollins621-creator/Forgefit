@@ -920,3 +920,47 @@ svg.anim .bf{fill:currentColor;opacity:.42}
 svg.anim .shd{fill:#000;opacity:.32}
 :root[data-theme=light] svg.anim .shd{opacity:.1}
 svg.anim rect.db{stroke:none}
+/* v22: calmer Workout tab. Session first, tips folded into one swipeable coach card */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hnote{display:flex;align-items:center;gap:8px;width:100%;margin:6px 0 2px;padding:0;background:none;border:0;color:var(--mut);font-size:12.5px;text-align:left}
+.hnote .hn1{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hnote .hwhy{flex:none;display:inline-flex;align-items:center;gap:2px;color:var(--tx2);font-weight:600}
+.hnote .hwhy .ic{width:14px;height:14px}
+.whyl{margin:0 0 14px;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.whyl li{position:relative;padding-left:16px;font-size:14px;line-height:1.45;color:var(--tx2)}
+.whyl li::before{content:"";position:absolute;left:2px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.tips{display:flex;flex-direction:column;gap:6px}
+.coachrow{display:flex;gap:8px}
+.coachrow.multi{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding:0 16px}
+.coachrow.multi::-webkit-scrollbar{display:none}
+.cslide{flex:0 0 100%;scroll-snap-align:start;display:flex}
+.coachrow.multi .cslide{flex-basis:calc(100% - 26px)}
+.cslide>.banner{flex:1;display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0}
+.cslide>.banner>:not(.grow){align-self:flex-start}
+.cslide>.banner b{font-size:15px}
+.cslide .banner .mut.sm,.cslide .banner ul{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cslide .banner ul{margin:4px 0 0;padding-left:16px;font-size:13px;color:var(--tx3)}
+.cslide .banner ul li:nth-child(n+2){display:none}
+.cslide.open .banner .mut.sm,.cslide.open .banner ul{display:block;-webkit-line-clamp:unset}
+.cslide.open .banner ul li{display:list-item}
+.cdots{display:flex;justify-content:center;gap:5px}
+.cdots i{width:5px;height:5px;border-radius:3px;background:var(--b2,rgba(255,255,255,.14));transition:width .2s,background .2s}
+.cdots i.on{width:14px;background:var(--tx3)}
+/* one orange action per screen: buttons inside tips are quiet */
+.banner .mini.pri,.banner .btn.pri{background:var(--btn);border:1px solid var(--bd);color:var(--tx)}
+.cslide .banner>.col{flex-direction:row;flex-wrap:wrap}
+/* play badges: dark glass, so a list of exercises isn't dotted with orange */
+.pbadge{background:rgba(10,12,16,.82);border-color:var(--card)!important;box-shadow:none}
+.pbadge .ic{color:#F8FAFC}
+.thumb.lg .pbadge{background:rgba(10,12,16,.72);border:1px solid rgba(255,255,255,.18)}
+:root[data-theme=light] .pbadge{background:#1E293B}
+/* ghost previews for empty charts: a faded sample of the chart, the next step underneath */
+.ghost{border:0;padding:4px 0 0;background:none;display:flex;flex-direction:column;align-items:center;gap:10px}
+.gsvg{display:block;width:100%;height:96px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent);mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent)}
+.gsvg .gg{stroke:var(--bd);stroke-width:1;fill:none;stroke-dasharray:3 5;vector-effect:non-scaling-stroke}
+.gsvg .ga{fill:var(--tx3);opacity:.08}
+.gsvg .gl{stroke:var(--tx3);stroke-width:2.5;fill:none;opacity:.38;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.gsvg .gl2{stroke:var(--tx3);stroke-width:2;fill:none;opacity:.25;stroke-dasharray:5 5;vector-effect:non-scaling-stroke}
+.gsvg .gd{fill:var(--tx3);opacity:.4}
+.gmsg{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:270px;text-align:center;padding:0 8px 6px}
+.gmsg p{margin:0;font-size:13.5px;line-height:1.45;color:var(--tx3)}

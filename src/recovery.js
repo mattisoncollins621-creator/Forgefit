@@ -52,7 +52,7 @@ function renderRecovery() {
   updatePassiveRecovery();
   const coach = coachBanner(), avg = avgRecovery(), dots = ['front', 'back'].map(s => `<button class="dot${recSide === s ? ' on' : ''}" data-a="recFlip" data-v="${s}" aria-label="Show ${s} view"></button>`).join('');
   $('#tab-recovery').innerHTML = `
-    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Each muscle recovers at its own speed. Feel sorer or fresher than shown? Drag its slider and ForgeFit learns your pace.</p></div></div>
+    <div class="card rhero"><div class="row gap12">${readyRing(avg)}<div class="grow"><h2 class="h2">Readiness</h2><p class="mut sm">Feel sorer or fresher than shown? Drag that muscle's slider and ForgeFit learns your pace.</p></div></div>
       <div class="row gap6 pt8 wrap"><button class="gpill" data-a="resetRec">Reset to 100%</button><button class="gpill" data-a="simTime">+24h simulate</button>${coach ? '' : '<button class="gpill" data-a="startDeload">Deload anyway</button>'}</div></div>
     ${restCard()}
     ${coach}

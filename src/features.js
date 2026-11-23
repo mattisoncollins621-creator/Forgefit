@@ -385,8 +385,22 @@ function smoothPath(P) {
   }
   return d;
 }
+/* empty charts: a faded sample of what will appear, plus one plain next step */
+function ghost(kind, msg, cta) {
+  const lines = {
+    up: [[0, 82], [40, 76], [80, 70], [120, 64], [160, 52], [200, 48], [240, 36], [280, 30], [300, 24]],
+    down: [[0, 30], [50, 36], [100, 40], [150, 52], [200, 56], [250, 64], [300, 68]],
+  };
+  const path = ps => 'M' + ps.map(p => p.join(' ')).join('L');
+  const area = ps => path(ps) + 'L300 110L0 110Z';
+  const a = kind === 'two' ? lines.up : lines.up, b = kind === 'two' ? lines.down : null;
+  return `<div class="empty ghost"><svg class="gsvg" viewBox="0 0 300 110" preserveAspectRatio="none" aria-hidden="true">
+    <path class="gg" d="M0 27.5H300M0 55H300M0 82.5H300"/><path class="ga" d="${area(a)}"/><path class="gl" d="${path(a)}"/>${b ? `<path class="gl2" d="${path(b)}"/>` : ''}</svg>
+    <div class="gmsg"><p>${msg}</p>${cta || ''}</div></div>`;
+}
+const goBtn = (t, l) => `<button class="mini" data-a="go" data-t="${t}">${l} ${ic('chevR')}</button>`;
 function lineChart(pts, o = {}) {
-  if (!pts.length) return '<div class="empty">No data yet.</div>';
+  if (!pts.length) return ghost('up', o.empty || 'Your trend line appears after your first two entries.');
   const w = 340, h = o.h || 176, pl = 40, pr = 14, pt = 14, pb = 26, fmt = o.fmt || (v => Math.round(v * 10) / 10), gid = 'cg' + (++chartN);
   let x0 = Math.min(...pts.map(p => p.t)), x1 = Math.max(...pts.map(p => p.t)); if (x0 === x1) { x0 -= DAY; x1 += DAY; }
   const ys = pts.map(p => p.v); let y0 = Math.min(...ys), y1 = Math.max(...ys); const py = (y1 - y0) * .2 || Math.max(1, y1 * .05); y0 -= py; y1 += py;
@@ -436,13 +450,13 @@ function renderProgress() {
     <div class="card"><div class="row sp"><h2 class="h2">Strength curve</h2><select data-f="progRange" class="sel-sm"><option value="30" ${prog.range === 30 ? 'selected' : ''}>1 month</option><option value="90" ${prog.range === 90 ? 'selected' : ''}>3 months</option><option value="365" ${prog.range === 365 ? 'selected' : ''}>1 year</option><option value="0" ${prog.range === 0 ? 'selected' : ''}>All time</option></select></div>
       ${ids.length ? `<select data-f="progEx">${ids.map(id => `<option value="${id}" ${id === prog.ex ? 'selected' : ''}>${esc(exById(id).name)}</option>`).join('')}</select>
       <div class="row sp pt8"><div><div class="mut xs">Estimated 1RM</div><b class="big or">${lastP ? lastP.v : '—'} ${unit()}</b></div><div class="right"><div class="mut xs">Change</div><b class="${delta > 0 ? 'gr' : delta < 0 ? 'rd' : ''}">${delta === null ? '—' : (delta > 0 ? '+' : '') + delta + '%'}</b></div></div>${lineChart(pts, { u: unit() })}<button class="btn sec full mt8" data-a="exHist" data-id="${prog.ex}">${ic('trend')} Full history for this lift</button>`
-      : '<div class="empty">Finish a session with logged sets and your e1RM curve will appear here.</div>'}</div>
+      : ghost('up', 'Your strength curve starts with your first logged workout.')}</div>
     ${bodyVsStrength()}
     <div class="card"><div class="row sp"><h2 class="h2">Muscle heatmap</h2><div class="segp"><button class="${prog.heat === 'vol' ? 'on' : ''}" data-a="heat" data-v="vol">Volume</button><button class="${prog.heat === 'int' ? 'on' : ''}" data-a="heat" data-v="int">Intensity</button></div></div>
-      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day (secondary muscles count in proportion to how much they work).' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
+      <p class="mut xs">${prog.heat === 'vol' ? 'Hard sets per day, helper muscles included.' : 'Average load as % of your e1RM that day.'} Last ${days} days.</p>
       <div class="heat">${MUSCLES.map(m => `<div class="hrow"><span>${m}</span><div class="hcells">${hd[m].map(cell).join('')}</div></div>`).join('')}</div>
       <div class="row sp mut xs"><span>${fmtDate(now - (days - 1) * DAY)}</span><span>Today</span></div></div>
-    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">The green band is your target range for your goal and experience. Bars show the last 7 days; the mini chart is the last 4 weeks, oldest to newest.</p>
+    <div class="card"><h2 class="h2">Weekly sets by muscle</h2><p class="mut xs">Last 7 days against your target range (green). The mini chart shows the last 4 weeks.</p>
       <div class="vlist">${MUSCLES.map(m => {
         const a = ws4[m], cur = a[3], [lo, hi] = setTarget(m), sc = Math.max(25, hi * 1.4), mx = Math.max(1, ...a, lo);
         const stat = cur >= lo && cur <= hi ? ['Optimal', 'gr'] : cur > hi ? ['Over', 'am'] : cur < lo * .5 ? ['Low', 'rd'] : ['Low', 'am'];
@@ -453,7 +467,7 @@ function renderProgress() {
     <div class="card"><h2 class="h2">Recent sessions</h2>${hist.length ? `<div class="slist">${hist.slice(0, 12).map(h => {
       const d = h.t ? new Date(h.t) : null, meta = [h.dur ? h.dur + ' min' : '', d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : esc(h.legacyDate || ''), (h.cardio || []).length ? 'cardio' : ''].filter(Boolean).join(' · ');
       return `<div class="stile"><div class="dtile"><small>${d ? d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '—'}</small><b>${d ? String(d.getDate()).padStart(2, '0') : '–'}</b></div><div class="grow"><b class="sname">${esc(h.name || 'Session')}</b><div class="mut xs">${meta}</div></div><div class="spills"><span>${h.sets} sets</span><span>${(h.vol || 0).toLocaleString()} ${h.unit || unit()}</span></div><button class="ib" data-a="histMenu" data-id="${h.id}" aria-label="Session options">${ic('more')}</button></div>`;
-    }).join('')}</div>` : '<div class="empty">No sessions yet. Finish a workout and it shows up here.</div>'}</div>`;
+    }).join('')}</div>` : '<div class="empty">No sessions yet. Each workout you finish is listed here.</div>'}</div>`;
 }
 R.progress = renderProgress;
 F.progEx = el => { prog.ex = el.value; renderProgress(); };
@@ -481,7 +495,7 @@ function renderBody() {
     <div class="card"><h2 class="h2">Log measurements</h2><p class="mut xs">Fill in whatever you measured today.</p>
       <div class="grid3 pt8">${f('weight', `Weight (${unit()})`, state.profile.weight)}${f('bf', 'Body fat %')}${f('chest', `Chest (${u})`)}${f('waist', `Waist (${u})`)}${f('hips', `Hips (${u})`)}${f('arm', `Arm (${u})`)}${f('thigh', `Thigh (${u})`)}</div>
       <button class="btn pri full mt8" data-a="measSave">Save measurements</button></div>
-    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="segp rng">${[[30, '1M'], [90, '3M'], [180, '6M'], [365, '1Y'], [0, 'All']].map(([v, l]) => `<button class="${bodyRange === v ? 'on' : ''}" data-a="bodyRange" data-v="${v}">${l}</button>`).join('')}</div>${lineChart(pts, { h: 190, u: bodyMetric === 'bf' ? '%' : bodyMetric === 'weight' ? unit() : u })}</div>
+    <div class="card"><div class="row sp"><h2 class="h2">Trend</h2><select data-f="bodyMetric" class="sel-sm">${Object.entries(BM).map(([k, l]) => `<option value="${k}" ${k === bodyMetric ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="segp rng">${[[30, '1M'], [90, '3M'], [180, '6M'], [365, '1Y'], [0, 'All']].map(([v, l]) => `<button class="${bodyRange === v ? 'on' : ''}" data-a="bodyRange" data-v="${v}">${l}</button>`).join('')}</div>${lineChart(pts, { h: 190, u: bodyMetric === 'bf' ? '%' : bodyMetric === 'weight' ? unit() : u, empty: `Log ${(BM[bodyMetric] || 'it').replace(/ \(.*\)/, '').toLowerCase()} on two days and your trend appears here.` })}</div>
     <div class="card"><div class="row sp"><h2 class="h2">Progress photos</h2><div class="row gap6">${state.photos.length > 1 ? `<button class="gpill" data-a="photoCmp">${ic('swap')} Compare</button>` : ''}<button class="gpill add" data-a="photoAdd">${ic('plus')} Add photo</button></div></div><p class="mut xs">Stored privately on this device only.</p><div class="photos" id="photos">${state.photos.length ? '' : `<div class="empty photoempty">${ic('image', 'xl')}<b>No photos yet</b><span>Take one every few weeks in the same spot and light, then use Compare to see the change. They stay on this phone and are included in your backups.</span></div>`}</div></div>
     <div class="card"><h2 class="h2">History</h2>${ms.length ? `<div class="tline">${[...ms].reverse().slice(0, 15).map(m => `<div class="tl"><span class="tdot"></span><div class="tlc"><div class="row sp"><span class="dpill">${fmtDate(m.t, { month: 'short', day: 'numeric', year: 'numeric' })}</span><button class="ib" data-a="measDel" data-id="${m.id}" aria-label="Delete entry">${ic('close')}</button></div>
       <div class="mrows">${Object.keys(BM).filter(k => m[k] != null && m[k] !== '').map(k => `<div class="mrow"><span>${BM[k]}</span><b>${m[k]} ${MU[k]}</b>${delta(m, k)}</div>`).join('')}</div></div></div>`).join('')}</div>` : '<div class="empty">Nothing logged yet. Save your weight above and a trend line appears.</div>'}</div>`;
@@ -564,7 +578,7 @@ function renderMore() {
     people: profCard(true),
     data: `<div class="banner ${backupDue() || !state.lastExport ? 'note' : 'ok'}"><div class="grow"><b>${state.lastExport ? 'Last backup ' + fmtDate(state.lastExport, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No backup yet'}</b><div class="mut sm">${state.lastExport ? Math.floor((Date.now() - state.lastExport) / DAY) + ' days ago. A backup every couple of weeks keeps your history safe if this phone is lost or the browser data is cleared.' : 'Your data lives only on this device. Save a copy somewhere else so a lost phone or cleared browser can never wipe your history.'}</div></div></div>
       <button class="btn pri full" data-a="exportJSON">Back up now (share or save)</button>
-      <p class="mut xs">Changes auto-save instantly with a rolling backup copy on this device${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. That protects against crashes, not against losing the phone.</p>
+      <p class="mut xs">Everything saves automatically on this phone${state.lastBackup ? ' (last ' + fmtDT(state.lastBackup) + ')' : ''}. A backup file is what protects you if the phone is lost.</p>
       <div class="grid2"><button class="btn sec" data-a="importJSON">Import backup</button><button class="btn sec" data-a="restoreBak">Restore auto-backup</button></div>
       <div class="field"><label for="bak-every">Remind me to back up</label><select id="bak-every" data-f="bakEvery">${[[7, 'Every week'], [14, 'Every 2 weeks'], [30, 'Every month'], [0, 'Never']].map(([v, l]) => `<option value="${v}" ${bakEvery() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <p class="mut xs" id="persist-line">Checking whether this phone protects ForgeFit's storage…</p>

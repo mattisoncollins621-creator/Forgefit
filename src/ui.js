@@ -289,24 +289,28 @@ function renderWorkout() {
   } else {
     const st = planStats(), n = w.items.length, trimM = /trimmed (\d+)%/.exec(w.note || ''), trimmed = w.items.some(it => it.trimmed);
     tabEl.innerHTML = `
-    ${topBanners()}
-    ${weekCard()}
     <div class="chips scrollx snapx splits" role="tablist" aria-label="Training split">${splits.map(([k, l]) => `<button class="chip ${state.split === k ? 'on' : ''}" data-a="split" data-v="${k}">${l}</button>`).join('')}</div>
     <div class="card hero-card">
       <div class="row sp top"><div class="grow"><h2 class="ttl">${esc(w.name)}</h2>
         <div class="mchips"><span>${n} exercise${n === 1 ? '' : 's'}</span><span>~${st.min} min</span>${trimmed ? `<span class="am">${trimM ? trimM[1] + '% ' : ''}auto-trim active</span>` : ''}</div></div>
         <button class="ib" data-a="regen" aria-label="Regenerate workout" title="Regenerate">${ic('refresh')}</button></div>
-      ${w.note ? `<p class="mut xs hnote">${esc(w.note)}</p>` : ''}
+      ${w.note ? `<button class="hnote" data-a="planWhy"><span class="hn1">${esc(w.note.split(' · ')[0])}</span><span class="hwhy">Why this plan ${ic('chevR')}</span><span class="sr">${esc(w.note)}</span></button>` : ''}
       ${todayHits(w.items)}
       <div class="toolbar"><button data-a="autoSuper">${ic('link')}<span>Supersets</span></button><button data-a="tplOpen">${ic('clipboard')}<span>Templates</span></button><button data-a="nl">${ic('timer')}<span>Quick log</span></button><button data-a="wkMore" aria-label="More options">${ic('more')}<span>More</span></button></div>
     </div>
+    ${topBanners()}
     ${list}
+    ${weekCard()}
     ${n ? `<button class="btn pri hero fab" data-a="startWorkout">${ic('play', 'fill')} Start workout</button>` : ''}`;
   }
   document.body.classList.toggle('hasfab', tab === 'workout' && !live && !!w.items.length);
-  paintClock(); tickSess();
+  wireCoach(); paintClock(); tickSess();
 }
 R.workout = renderWorkout;
+A.planWhy = () => {                              // the full reasoning behind today's plan, one point per line
+  const w = wk(); if (!w.note) return;
+  openSheet('Why this plan', `<ul class="whyl">${w.note.split(' · ').map(t => `<li>${esc(t)}</li>`).join('')}</ul><button class="btn sec full" data-a="closeSheet">Got it</button>`);
+};
 function todayHits(items) {                      // mini front/back figure + the muscles today's plan works most
   const L = itemsLoad(items), top = MUSCLES.filter(m => L[m] >= .5).sort((a, b) => L[b] - L[a]); if (!top.length) return '';
   const mx = L[top[0]], W = {}; top.forEach(m => W[m] = L[m] / mx);
