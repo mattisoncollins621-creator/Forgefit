@@ -1,22 +1,37 @@
 /* ---------- recovery tab: readiness ring, flip-card body map, single-track sliders ---------- */
 /* Muscle regions are drawn for the left half of the figure and mirrored, so each region is one clickable group. */
-const BODY_BASE = {
-  front: ['M100 54 L80 57 C70 59 64 64 62 74 L60 100 C60 120 66 140 70 156 C72 166 76 174 80 182 L100 186 Z',
-    'M62 72 C54 74 48 82 47 94 L44 122 C43 128 47 132 52 132 L58 132 C62 131 64 127 65 122 L68 96 Z',
-    'M46 134 L40 170 C39 176 43 180 48 180 L53 180 C57 179 58 176 58 172 L62 134 Z',
-    'M100 180 L76 178 C70 204 68 236 72 268 C70 296 70 324 74 352 L76 380 C76 384 90 384 92 380 L94 352 C96 324 98 296 96 268 C98 240 100 214 100 196 Z'],
-  back: ['M100 54 L80 57 C70 59 64 64 62 74 L60 100 C60 120 66 140 70 156 C72 166 76 174 80 182 L100 186 Z',
-    'M62 72 C54 74 48 82 47 94 L44 122 C43 128 47 132 52 132 L58 132 C62 131 64 127 65 122 L68 96 Z',
-    'M46 134 L40 170 C39 176 43 180 48 180 L53 180 C57 179 58 176 58 172 L62 134 Z',
-    'M100 180 L76 178 C70 204 68 236 72 268 C70 296 70 324 74 352 L76 380 C76 384 90 384 92 380 L94 352 C96 324 98 296 96 268 C98 240 100 214 100 196 Z']
-};
-const DELT = 'M72 59 C64 60 58 65 56 73 C51 77 47 85 47 95 C52 100 58 101 63 98 C66 88 68 78 72 70 Z';
-const ARM = 'M47 98 L44 124 C44 128 48 130 52 130 L57 129 C60 126 62 118 63 108 L64 101 C58 103 52 102 47 98 Z';
+/* v23: anatomical figure. One smooth silhouette (left half, mirrored) with muscle regions drawn on top and
+   thin gaps between them, in the same style as the exercise figures. */
+const SIL = 'M100 60L91 60C88 64 80 66 70 68C58 70 50 76 49 88C48 100 47 112 45 124C43 136 41 146 41 154C39 172 36 192 35 210C34 222 34 232 37 240C40 246 46 246 47 238C48 228 48 218 49 210C51 194 54 176 55 160C56 150 58 140 59 128C60 118 61 108 63 100C66 116 68 132 70 148C71 160 66 172 63 184C60 198 60 214 62 232C64 252 68 268 70 282C71 296 68 310 69 324C70 340 74 356 76 368C76 376 70 382 72 386L92 386C93 380 91 374 90 368C90 352 93 336 92 318C91 304 90 292 91 282C93 260 98 232 98 206L100 200Z';
+function wholeSil(d) {                            // left half + its mirror image, joined into one outline with no centre seam
+  const t = d.match(/[MLCZ]|-?[\d.]+/g), segs = []; let i = 0, start, cur, k;
+  while (i < t.length) { k = t[i++]; if (k === 'Z') break; const n = k === 'C' ? 6 : 2, v = t.slice(i, i + n).map(Number); i += n;
+    if (k === 'M') { start = cur = [v[0], v[1]]; continue; } segs.push({ k, from: cur, v }); cur = [v[n - 2], v[n - 1]]; }
+  const mx = x => 200 - x, f = n => +n.toFixed(1);
+  let out = `M${start[0]} ${start[1]}` + segs.map(g => g.k + g.v.join(' ')).join('');
+  for (let j = segs.length - 1; j >= 0; j--) { const g = segs[j], p0 = g.from, v = g.v;
+    out += g.k === 'C' ? `C${f(mx(v[2]))} ${v[3]} ${f(mx(v[0]))} ${v[1]} ${f(mx(p0[0]))} ${p0[1]}` : `L${f(mx(p0[0]))} ${p0[1]}`; }
+  return out + 'Z';
+}
+const BODY_BASE = { front: [wholeSil(SIL)], back: [wholeSil(SIL)] };
+const DELT = 'M72 69C59 70 51 76 50 88C49 98 50 106 53 112C57 104 61 96 65 88C68 81 71 75 75 71Z';
 const BODY_MUS = {
-  front: { Shoulders: [DELT], Chest: ['M100 64 L76 62 C71 66 69 72 68 80 C70 92 78 100 90 100 C96 100 100 98 100 96 Z'], Biceps: [ARM], Core: ['M99 104 L88 104 C84 118 84 140 86 156 C88 164 94 170 99 172 Z'],
-    Quads: ['M99 188 L77 184 C71 206 70 232 73 256 C77 264 88 266 94 262 C98 244 100 216 99 188 Z'], Calves: ['M74 292 C72 312 73 330 75 348 L90 346 C93 326 94 306 93 292 C88 286 80 286 74 292 Z'] },
-  back: { Shoulders: [DELT], Back: ['M100 58 L78 60 C70 64 66 70 66 80 C67 98 72 114 80 128 C84 138 84 150 88 160 L100 164 Z'], Triceps: [ARM], Glutes: ['M100 168 L82 166 C74 172 72 184 76 196 C84 204 94 204 100 200 Z'],
-    Hamstrings: ['M99 206 L78 202 C72 224 71 246 74 262 C80 268 90 268 95 262 C98 244 100 226 99 206 Z'], Calves: ['M74 276 C70 296 72 322 76 342 L90 342 C94 322 96 298 94 276 C88 270 80 270 74 276 Z'] }
+  front: {
+    Shoulders: [DELT],
+    Chest: ['M98 72L77 72C70 76 67 84 67 94C69 106 77 114 88 114C94 114 98 112 98 108Z'],
+    Biceps: ['M54 115C51 125 50 135 51 146C53 151 57 151 59 147C61 137 62 125 61 113C59 108 56 109 54 115Z'],
+    Core: ['M98 119L87 119C85 141 85 166 88 186C91 192 96 196 98 196Z', 'M83 121C77 131 73 142 72 152C71 162 73 170 77 178L85 183C83 161 82 141 83 121Z'],
+    Quads: ['M96 205C88 203 78 201 69 197C64 215 64 236 67 254C71 270 77 278 84 280C90 276 94 264 95 250C97 234 97 219 96 205Z'],
+    Calves: ['M72 297C70 311 70 326 73 340L78 344C80 328 80 312 78 297Z', 'M90 300C91 314 91 328 89 344L85 344C84 328 84 312 86 299Z']
+  },
+  back: {
+    Shoulders: [DELT],
+    Back: ['M98 60L91 61C86 65 81 67 74 70C80 75 87 81 92 92C96 100 98 106 98 110Z', 'M67 97C67 111 69 126 72 142C75 154 80 164 88 170L95 166C93 150 90 132 86 118C82 107 75 101 67 97Z', 'M97 121L91 123C90 141 91 158 94 172L98 174Z'],
+    Triceps: ['M51 108C49 120 48 132 49 146C52 151 56 151 58 147C60 135 61 122 61 110C58 104 53 104 51 108Z'],
+    Glutes: ['M98 179C88 177 77 179 69 187C65 199 67 211 73 217C81 223 92 221 98 215Z'],
+    Hamstrings: ['M96 225C88 227 78 225 69 219C66 237 67 254 71 268C75 276 80 280 84 280C90 276 94 266 95 252C97 242 97 232 96 225Z'],
+    Calves: ['M72 293C69 307 70 322 74 334C77 340 81 342 82 338C83 322 82 306 80 293C77 289 74 289 72 293Z', 'M85 293C87 307 88 322 86 338C89 342 92 338 93 332C94 318 93 304 90 293C88 289 86 289 85 293Z']
+  }
 };
 const MIRROR = 'transform="matrix(-1 0 0 1 200 0)"';
 let recSide = 'front', recSel = null, recSwiped = false;
@@ -28,8 +43,8 @@ function bodySvg(side, paint, inline) {
   const mus = Object.entries(BODY_MUS[side]).map(([m, ds]) => { const o = paint(m) || {};
     const at = o.act ? ` data-a="${o.act}" role="button"` : '', fl = inline ? ` fill="${o.fill || 'rgba(255,255,255,.1)'}" stroke="#141721" stroke-width="1.3"` : (o.fill ? ` style="--mf:${o.fill}"` : '');
     return `<g class="mus ${o.cls || ''}" data-m="${m}"${at}${fl} aria-label="${esc(o.label || m)}">${ds.map(d => `<path d="${d}"/><path d="${d}" ${MIRROR}/>`).join('')}</g>`; }).join('');
-  const base = BODY_BASE[side].map(d => `<path class="base"${bf} d="${d}"/><path class="base"${bf} d="${d}" ${MIRROR}/>`).join('');
-  return `<svg viewBox="0 0 200 392" aria-label="${side} view"${inline ? ' xmlns="http://www.w3.org/2000/svg" width="200" height="392"' : ''}><circle class="base"${bf} cx="100" cy="27" r="15"/><path class="base"${bf} d="M93 40 L93 55 L107 55 L107 40 Z"/>${base}${mus}</svg>`;
+  const base = BODY_BASE[side].map(d => `<path class="base"${bf} d="${d}"/>`).join('');
+  return `<svg viewBox="0 0 200 392" aria-label="${side} view"${inline ? ' xmlns="http://www.w3.org/2000/svg" width="200" height="392"' : ''}><ellipse class="base"${bf} cx="100" cy="29" rx="14.5" ry="18"/><path class="base"${bf} d="M92 42C92 50 91 56 89 62L111 62C109 56 108 50 108 42Z"/>${base}${mus}</svg>`;
 }
 /* orange heat by share (0–1): used for "what this exercise works" and "what today hits" */
 const heatFill = a => a > 0 ? `rgba(249,115,22,${(.18 + .82 * clamp(a, 0, 1)).toFixed(2)})` : '';
@@ -61,11 +76,18 @@ function renderRecovery() {
       <div class="dots" role="tablist" aria-label="Body view">${dots}</div>
       <div class="selinfo mut sm" id="recSel">${recSel ? recSelText(recSel) : 'Tap a muscle to jump to its slider. Swipe to turn the figure.'}</div>
       <div class="rlegend"><span><i class="gr"></i>Fresh</span><span><i class="am"></i>Recovering</span><span><i class="rd"></i>Fatigued</span></div></div>
-    <div class="card rlist">${MUSCLES.map(m => { const p = rec(m), c = recCol(p);
-      return `<div class="rrow ${c}" data-row="${m}"><div class="rtop"><span class="grow"><b>${m}</b><small class="rsub" data-sub>${recSub(m)}</small></span><span class="tag ${c}" data-badge>${recWord(p)}</span><span class="rpct" data-pct>${p}%</span></div>
-      <input type="range" class="rs" min="0" max="100" value="${p}" style="--p:${p}%" data-f="recSlide" data-learn="recLearn" data-live="1" data-m="${m}" aria-label="${m} freshness"></div>`; }).join('')}</div>`;
+    ${recList()}`;
 }
 R.recovery = renderRecovery;
+/* most tired first; muscles that are completely fresh fold into one row you can open */
+function recList() {
+  const row = m => { const p = rec(m), c = recCol(p);
+    return `<div class="rrow ${c}" data-row="${m}"><div class="rtop"><span class="grow"><b>${m}</b><small class="rsub" data-sub>${recSub(m)}</small></span><span class="tag ${c}" data-badge>${recWord(p)}</span><span class="rpct" data-pct>${p}%</span></div>
+      <input type="range" class="rs" min="0" max="100" value="${p}" style="--p:${p}%" data-f="recSlide" data-learn="recLearn" data-live="1" data-m="${m}" aria-label="${m} freshness"></div>`; };
+  const ms = MUSCLES.slice().sort((a, b) => rec(a) - rec(b)), tired = ms.filter(m => rec(m) < 100), fresh = ms.filter(m => rec(m) >= 100);
+  const fold = fresh.length ? `<details class="rfresh"${tired.length ? '' : ' open'}><summary><span class="grow"><b>${tired.length ? `${fresh.length} more fully fresh` : 'Every muscle is fully fresh'}</b><small class="rsub">${fresh.join(', ')}</small></span><span class="tag gr">Fresh</span>${ic('chevR', 'rchev')}</summary>${fresh.map(row).join('')}</details>` : '';
+  return `<div class="card rlist">${tired.map(row).join('')}${fold}</div>`;
+}
 const recSub = m => { const h = hrsToFull(m), pw = paceWord(m); return (h ? `full in ~${h < 48 ? h + 'h' : Math.round(h / 24) + ' days'}` : 'fully recovered') + (pw ? ` · ${pw}` : ''); };
 const recSelText = m => `<b>${m}</b> · ${rec(m)}% fresh · ${recWord(rec(m))}`;
 function paintRecLive(m) {
@@ -98,6 +120,7 @@ A.recMuscle = el => {
   document.querySelectorAll('#tab-recovery .mus').forEach(g => g.classList.toggle('sel', g.dataset.m === m));
   $('#recSel').innerHTML = recSelText(m);
   const row = document.querySelector(`#tab-recovery .rrow[data-row="${m}"]`); if (!row) return;
+  const fd = row.closest('details'); if (fd) fd.open = true;
   row.scrollIntoView({ behavior: 'smooth', block: 'center' });
   row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
 };

@@ -664,5 +664,20 @@ function go(t) {
   tab = t;
   ['workout', 'recovery', 'progress', 'body', 'more'].forEach(k => { $('#tab-' + k).hidden = k !== t; $('#nav-' + k).classList.toggle('on', k === t); });
   R[t] && R[t](); if (t !== 'workout') document.body.classList.remove('hasfab'); window.scrollTo(0, 0);
+  const h = $('#htitle'); if (h) h.textContent = TAB_TITLE[t] || 'ForgeFit';
+  const sec = $('#tab-' + t); sec.classList.remove('tabin'); void sec.offsetWidth; sec.classList.add('tabin');
+  countUp(sec);
+}
+const TAB_TITLE = { workout: 'Workout', recovery: 'Recovery', progress: 'Progress', body: 'Body', more: 'Settings' };
+/* headline numbers count up when a tab opens (skipped with reduced motion; stops if the number changes meanwhile) */
+function countUp(root) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.querySelectorAll('.tile b, #rring-n').forEach(el => {
+    const m = /^(\d+(?:\.\d)?)(k|%)?$/.exec(el.textContent.trim()); if (!m || +m[1] === 0) return;
+    const to = +m[1], dec = m[1].includes('.') ? 1 : 0, suf = m[2] || '', t0 = performance.now(), D = 520; let last = el.textContent;
+    const step = now => { if (el.textContent !== last) return; const x = Math.max(0, Math.min(1, (now - t0) / D)), e = 1 - Math.pow(1 - x, 3);
+      last = el.textContent = (to * e).toFixed(dec) + suf; if (x < 1) requestAnimationFrame(step); };
+    last = el.textContent = (0).toFixed(dec) + suf; requestAnimationFrame(step);
+  });
 }
 A.go = el => go(el.dataset.t);

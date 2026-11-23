@@ -17,6 +17,8 @@ head='''<!DOCTYPE html>
 import json
 ICONS=json.load(open('src/icons.json'))
 css=open('src/style.css').read(); body=open('src/body.html').read()
+import base64
+css=css.replace('__FONT_BSD__',base64.b64encode(open('src/fonts/big-shoulders-display.woff2','rb').read()).decode())   # embedded so it works offline from the first launch
 # {{ic:name}} in body.html becomes the inline svg
 import re as _re
 body=_re.sub(r'\{\{ic:([a-z-]+)\}\}',lambda m:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[m.group(1)]+'</svg>',body)

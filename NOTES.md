@@ -33,6 +33,7 @@ The Netlify site must stay **public**. Netlify "access protection" makes `sw.js`
 | `style.css` | All styles. Later blocks override earlier ones; the newest design system starts at the `v11`/`v12` blocks. |
 | `body.html` | Static page shell (header, tab bar, sheet, overlays) |
 | `videos.json` | One YouTube tutorial per exercise: `{"exId": ["videoId", "title"]}`. Injected by `build.py` as `__VIDEOS__`. Picked by title; swap any that turn out poor. |
+| `fonts/` | Big Shoulders Display (OFL, `OFL.txt`), used for headings and numbers via `--fd`. `build.py` embeds it into `index.html` as base64 (`__FONT_BSD__`), so it works offline with no extra file to cache. |
 | `icons.json` | Inline SVG icons, used as `ic('name')` in JS or `{{ic:name}}` in `body.html` |
 
 Conventions:
@@ -48,9 +49,11 @@ Conventions:
 - Green / amber / red are **only** for status: Fresh above 85%, Recovering 50–84%, Fatigued below 50% (`recCol`), plus deltas and danger.
 - Header and tab bar are frosted glass (`rgba(10,12,16,.85)` + `blur(16px)`). Numbers use tabular figures.
 - Every animation sits behind `prefers-reduced-motion: no-preference`.
+- Headings and big numbers use `var(--fd)` (Big Shoulders Display); body text stays in the system font. The header shows the tab's title (`#htitle`, set in `go()`).
+- One orange action per screen. Buttons inside tips (`.banner`) are deliberately quiet.
 
 ## Tests
-`tests/` holds Playwright suites `testA`–`testT` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
+`tests/` holds Playwright suites `testA`–`testU` plus the helper `h.js`. Chromium and Playwright must be installed. They currently assume this layout, so adjust the paths in `h.js` if yours differs:
 - the app source at `/home/claude/forgefit`
 - tests run from `/tmp/t`, with files served from `/tmp/t/www` and screenshots written to `/tmp/t/out`
 - `/tmp/t/index_v_prev.html` holds an older build, used by the update tests

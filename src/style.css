@@ -964,3 +964,47 @@ svg.anim rect.db{stroke:none}
 .gsvg .gd{fill:var(--tx3);opacity:.4}
 .gmsg{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:270px;text-align:center;padding:0 8px 6px}
 .gmsg p{margin:0;font-size:13.5px;line-height:1.45;color:var(--tx3)}
+/* recovery list: fresh muscles folded into one row */
+.rfresh>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
+.rfresh>summary::-webkit-details-marker{display:none}
+.rfresh>summary .rsub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.rfresh .rchev{width:16px;height:16px;color:var(--mut);transition:transform .2s}
+.rfresh[open] .rchev{transform:rotate(90deg)}
+.rlist>.rfresh:not(:first-child){border-top:1px solid var(--bd)}
+
+/* ---------- v23: Big Shoulders Display for headings and numbers (OFL, embedded) ---------- */
+@font-face{font-family:'Big Shoulders';src:url(data:font/woff2;base64,__FONT_BSD__) format('woff2');font-weight:100 900;font-display:swap}
+:root{--fd:'Big Shoulders',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.ttl,.h2,.fname,h1,.sheet-h h3,#pr h2,.rn b,.tile b,.big,.sess-time,#tdisp,#tp-count,#tp-phase,.prbig,.calres b,.sctl input,#htitle{font-family:var(--fd);letter-spacing:.005em}
+.ttl{font-size:26px;font-weight:800;line-height:1.05}
+.h2{font-size:21px;font-weight:750;line-height:1.1}
+.sheet-h h3{font-size:22px;font-weight:800}
+.fname{font-size:28px;font-weight:800;line-height:1.05}
+.rn b{font-size:34px;font-weight:800}
+.tile b{font-size:25px;font-weight:800;line-height:1.05}
+.big{font-size:28px;font-weight:800}
+.sess-time{font-size:40px;font-weight:800;letter-spacing:.01em}
+#tdisp{font-size:30px;font-weight:800}
+#tp-count{font-size:80px;font-weight:800}
+.prbig{font-size:42px;font-weight:800}
+.calres b{font-size:42px;font-weight:800}
+.sctl input{font-size:31px;font-weight:800}
+/* slim header: logo mark + the tab's own title */
+#htitle{font-size:27px;font-weight:800;line-height:1;margin:0;color:var(--tx);text-transform:none}
+.brand{gap:10px}
+.brand .logo{width:30px;height:30px;border-radius:9px}
+.brand .logo svg{width:17px;height:17px}
+#hdr .hbar{padding-top:8px;padding-bottom:8px}
+#hdr .pill .pt{display:none}
+#hdr .pill[data-a=plateTop]{width:38px;height:38px;padding:0;justify-content:center;border-radius:12px}
+/* motion: tabs ease in, sheets glide with a soft spring, the scrim fades */
+.panel{transition:transform .42s cubic-bezier(.32,.72,0,1)}
+.scrim{opacity:0;transition:opacity .3s ease}
+#sheet.open .scrim{opacity:1}
+@media (prefers-reduced-motion:no-preference){
+  .tabin{animation:tabin .26s cubic-bezier(.2,.8,.2,1)}
+  @keyframes tabin{from{opacity:0;transform:translateY(10px)}}
+  #nav button .ic{transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+  #nav button.on .ic{transform:translateY(-1px) scale(1.08)}
+}
+@media (prefers-reduced-motion:reduce){.panel,.scrim{transition:none}}
