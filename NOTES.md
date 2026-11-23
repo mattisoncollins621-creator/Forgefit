@@ -46,7 +46,7 @@ Conventions:
 - Canvas `#0A0C10`. Cards `#141721` with a 1px `rgba(255,255,255,.06)` border and a top rim light.
 - Text `#F8FAFC` / `#94A3B8` / `#64748B`; labels use `#8593A8` for readability.
 - Orange `#F97316` is for the brand, hero actions and selected states only.
-- Green / amber / red are **only** for status: Fresh above 85%, Recovering 50–84%, Fatigued below 50% (`recCol`), plus deltas and danger.
+- Green / amber / red (muted: `--gr #3BA57A`, `--am #D39A3A`, `--rd #D2605A`, with `--*-rgb` triplets and lighter `--*-t` text tones; light theme has its own set) are **only** for status. Never hard-code them; use the tokens. Fresh above 85%, Recovering 50–84%, Fatigued below 50% (`recCol`), plus deltas and danger.
 - Header and tab bar are frosted glass (`rgba(10,12,16,.85)` + `blur(16px)`). Numbers use tabular figures.
 - Every animation sits behind `prefers-reduced-motion: no-preference`.
 - Headings and big numbers use `var(--fd)` (Big Shoulders Display); body text stays in the system font. The header shows the tab's title (`#htitle`, set in `go()`).
